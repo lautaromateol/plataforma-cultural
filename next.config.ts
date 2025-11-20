@@ -1,7 +1,14 @@
-import type { NextConfig } from 'next'
-
-const nextConfig: NextConfig = {
-  /* config options here */
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  webpack: (config: { resolve: { extensionAlias: { '.js': string[] } } }) => {
+    config.resolve.extensionAlias = {
+      '.js': ['.ts', '.tsx', '.js', '.jsx'],
+    }
+    return config
+  },
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
+  },
 }
 
-export default nextConfig
+module.exports = nextConfig
