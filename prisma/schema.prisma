@@ -7,6 +7,7 @@ datasource db {
   provider = "postgresql"
 }
 
+
 model User {
   id                String   @id @default(cuid())
   dni               String   @unique
@@ -20,11 +21,148 @@ model User {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  // Relaciones
+  studentProfile    StudentProfile?
+  teacherProfile    TeacherProfile?
+  enrollments       Enrollment[]
+  courseSubjects    CourseSubject[]
+
   @@map("users")
+}
+
+// Año escolar (1ro, 2do, 3ro, etc.)
+model Year {
+  id          String   @id @default(cuid())
+  level       Int      @unique // 1, 2, 3, 4, 5, 6
+  name        String   @unique // "Primer Año", "Segundo Año", etc.
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  subjects    Subject[]
+  courses     Course[]
+
+  @@map("years")
+}
+
+// Materia (Matemática, Lengua, etc.)
+model Subject {
+  id          String   @id @default(cuid())
+  name        String   // "Matemática", "Lengua"
+  code        String?  // "MAT-1", "LEN-1"
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  yearId      String
+  year        Year            @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  courseSubjects CourseSubject[]
+
+  @@unique([yearId, name])
+  @@map("subjects")
+}
+
+// CURSO = Grupo de estudiantes (1°A, 1°B, 2°A, etc.)
+model Course {
+  id           String   @id @default(cuid())
+  name         String   // "1°A", "1°B", "2°A", etc.
+  academicYear String   // "2024" - año lectivo
+  capacity     Int      @default(30)
+  classroom    String?  // "Aula 101"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  yearId       String
+  year         Year            @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  courseSubjects CourseSubject[]
+  enrollments  Enrollment[]
+
+  @@unique([name, academicYear])
+  @@map("courses")
+}
+
+// Relación muchos-a-muchos: Curso - Materia - Profesor
+model CourseSubject {
+  id        String   @id @default(cuid())
+  schedule  String?  // "Lunes 8:00-10:00"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  courseId   String
+  course     Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  subjectId  String
+  subject    Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  teacherId  String?
+  teacher    User?   @relation(fields: [teacherId], references: [id])
+
+  @@unique([courseId, subjectId])
+  @@map("course_subjects")
+}
+
+// Matrícula: Estudiante en un CURSO
+model Enrollment {
+  id        String   @id @default(cuid())
+  status    EnrollmentStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId  String
+  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@map("enrollments")
+}
+
+model StudentProfile {
+  id          String   @id @default(cuid())
+  birthDate   DateTime?
+  address     String?
+  phone       String?
+  guardianName String?
+  guardianPhone String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  userId      String @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("student_profiles")
+}
+
+model TeacherProfile {
+  id            String   @id @default(cuid())
+  specialization String?
+  hireDate      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relaciones
+  userId        String @unique
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("teacher_profiles")
 }
 
 enum UserRole {
   STUDENT
   TEACHER
   ADMIN
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  TRANSFERRED
 }
