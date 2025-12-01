@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import auth from "@/lib/middlewares/auth-middleware";
 import { Hono } from "hono";
 import { sign } from "hono/jwt";
-import { setCookie } from "hono/cookie";
+import { setCookie, deleteCookie } from "hono/cookie";
 import { zValidator } from "@hono/zod-validator";
 import { Resend } from "resend";
 import { randomBytes } from "node:crypto";
@@ -299,5 +299,15 @@ const app = new Hono()
 
       return c.json({ message: "Correo reenviado exitosamente." }, 200)
     }
-  );
+  )
+  .post("/logout", async (c) => {
+    deleteCookie(c, "token", {
+      path: "/",
+      httpOnly: true,
+      secure: true,
+      sameSite: "Lax",
+    });
+
+    return c.json({ message: "Sesión cerrada exitosamente." }, 200);
+  });
 export default app;
