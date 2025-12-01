@@ -112,6 +112,155 @@ const app = new Hono()
       return c.json({ message: "Error al obtener el año" }, 500);
     }
   })
+  .get("/level/:level", async (c) => {
+    const prisma = c.get("prisma");
+    const level = parseInt(c.req.param("level"));
+
+    if (isNaN(level) || level < 1 || level > 6) {
+      return c.json({ message: "Nivel inválido" }, 400);
+    }
+
+    try {
+      const year = await prisma.year.findUnique({
+        where: { level },
+        include: {
+          subjects: {
+            include: {
+              courseSubjects: {
+                include: {
+                  course: {
+                    select: {
+                      id: true,
+                      name: true,
+                      academicYear: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          courses: {
+            include: {
+              enrollments: {
+                include: {
+                  student: {
+                    select: {
+                      id: true,
+                      dni: true,
+                      name: true,
+                      email: true,
+                      studentProfile: true,
+                    },
+                  },
+                },
+              },
+              courseSubjects: {
+                include: {
+                  subject: true,
+                  teacher: {
+                    select: {
+                      id: true,
+                      dni: true,
+                      name: true,
+                      email: true,
+                      teacherProfile: true,
+                    },
+                  },
+                },
+              },
+              _count: {
+                select: { enrollments: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (!year) {
+        return c.json({ message: "Año no encontrado" }, 404);
+      }
+
+      // Construir la respuesta con datos agregados
+      const students = year.courses.flatMap((course) =>
+        course.enrollments.map((enrollment) => ({
+          ...enrollment.student,
+          courseId: course.id,
+          courseName: course.name,
+          enrollmentStatus: enrollment.status,
+        }))
+      );
+
+      const teachersMap = new Map();
+      year.courses.forEach((course) => {
+        course.courseSubjects.forEach((cs) => {
+          if (cs.teacher) {
+            if (!teachersMap.has(cs.teacher.id)) {
+              teachersMap.set(cs.teacher.id, {
+                ...cs.teacher,
+                subjects: [],
+              });
+            }
+            teachersMap.get(cs.teacher.id).subjects.push({
+              id: cs.subject.id,
+              name: cs.subject.name,
+              code: cs.subject.code,
+              courseId: course.id,
+              courseName: course.name,
+            });
+          }
+        });
+      });
+      const teachers = Array.from(teachersMap.values());
+
+      const courses = year.courses.map((course) => ({
+        id: course.id,
+        name: course.name,
+        academicYear: course.academicYear,
+        capacity: course.capacity,
+        classroom: course.classroom,
+        enrollmentCount: course._count.enrollments,
+        subjects: course.courseSubjects.map((cs) => ({
+          id: cs.subject.id,
+          name: cs.subject.name,
+          code: cs.subject.code,
+          teacher: cs.teacher
+            ? {
+                id: cs.teacher.id,
+                name: cs.teacher.name,
+              }
+            : null,
+        })),
+      }));
+
+      const subjects = year.subjects.map((subject) => ({
+        ...subject,
+        courses: subject.courseSubjects.map((cs) => ({
+          id: cs.course.id,
+          name: cs.course.name,
+          academicYear: cs.course.academicYear,
+        })),
+      }));
+
+      return c.json(
+        {
+          year: {
+            id: year.id,
+            level: year.level,
+            name: year.name,
+            description: year.description,
+          },
+          students,
+          teachers,
+          courses,
+          subjects,
+        },
+        200
+      );
+    } catch (error) {
+      console.error(error);
+      return c.json({ message: "Error al obtener el año" }, 500);
+    }
+  })
   .put(
     "/:id",
     zValidator("json", updateYearSchema, (result, c) => {
