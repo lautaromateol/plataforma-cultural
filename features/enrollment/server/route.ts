@@ -1,210 +1,153 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { createEnrollmentSchema, updateEnrollmentSchema } from "../schemas";
-import auth from "@/lib/middlewares/auth-middleware";
+import { Hono } from "hono"
+import { zValidator } from "@hono/zod-validator"
+import { z } from "zod"
+import auth from "@/lib/middlewares/auth-middleware"
+
+const enrollSchema = z.object({
+  studentId: z.string(),
+  courseId: z.string(),
+})
 
 const app = new Hono()
   .use("*", auth)
   .use("*", async (c, next) => {
-    const user = c.get("user");
+    const user = c.get("user")
     if (user.role !== "ADMIN") {
-      return c.json({ message: "No autorizado" }, 403);
+      return c.json({ message: "No autorizado" }, 403)
     }
-    await next();
+    await next()
   })
-  .get("/", async (c) => {
-    const prisma = c.get("prisma");
-    const { courseId, studentId } = c.req.query();
-
-    try {
-      const where: any = {};
-      if (courseId) where.courseId = courseId;
-      if (studentId) where.studentId = studentId;
-
-      const enrollments = await prisma.enrollment.findMany({
-        where,
-        include: {
-          student: {
-            select: { id: true, name: true, dni: true, email: true },
-          },
-          course: {
-            include: {
-              year: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      return c.json({ enrollments }, 200);
-    } catch (error) {
-      console.error(error);
-      return c.json({ message: "Error al obtener las matrículas" }, 500);
-    }
-  })
-  .get("/:id", async (c) => {
-    const prisma = c.get("prisma");
-    const id = c.req.param("id");
-
-    try {
-      const enrollment = await prisma.enrollment.findUnique({
-        where: { id },
-        include: {
-          student: {
-            select: { id: true, name: true, dni: true, email: true },
-          },
-          course: {
-            include: {
-              year: true,
-              courseSubjects: {
-                include: {
-                  subject: true,
-                  teacher: {
-                    select: { name: true, email: true },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      if (!enrollment) {
-        return c.json({ message: "Matrícula no encontrada" }, 404);
-      }
-
-      return c.json({ enrollment }, 200);
-    } catch (error) {
-      console.error(error);
-      return c.json({ message: "Error al obtener la matrícula" }, 500);
-    }
-  })
+  // Matricular estudiante
   .post(
     "/",
-    zValidator("json", createEnrollmentSchema, (result, c) => {
+    zValidator("json", enrollSchema, (result, c) => {
       if (!result.success) {
         return c.json(
           { message: "Datos inválidos", errors: result.error.issues },
           400
-        );
+        )
       }
     }),
     async (c) => {
-      const prisma = c.get("prisma");
-      const data = c.req.valid("json");
+      const prisma = c.get("prisma")
+      const { studentId, courseId } = c.req.valid("json")
 
       try {
-        // Verificar si el estudiante ya está matriculado en este curso
-        const existingEnrollment = await prisma.enrollment.findFirst({
-          where: {
-            studentId: data.studentId,
-            courseId: data.courseId,
-          },
-        });
+        // Verificar que el estudiante existe y es estudiante
+        const student = await prisma.user.findUnique({
+          where: { id: studentId },
+        })
 
-        if (existingEnrollment) {
-          return c.json(
-            { message: "El estudiante ya está matriculado en este curso" },
-            400
-          );
+        if (!student) {
+          return c.json({ message: "Estudiante no encontrado" }, 404)
         }
 
-        // Verificar capacidad del curso
+        if (student.role !== "STUDENT") {
+          return c.json({ message: "El usuario no es un estudiante" }, 400)
+        }
+
+        // Verificar que el curso existe
         const course = await prisma.course.findUnique({
-          where: { id: data.courseId },
+          where: { id: courseId },
           include: {
             _count: {
               select: { enrollments: true },
             },
           },
-        });
+        })
 
         if (!course) {
-          return c.json({ message: "Curso no encontrado" }, 404);
+          return c.json({ message: "Curso no encontrado" }, 404)
         }
 
+        // Verificar capacidad
         if (course._count.enrollments >= course.capacity) {
-          return c.json(
-            { message: "El curso ha alcanzado su capacidad máxima" },
-            400
-          );
+          return c.json({ message: "El curso ha alcanzado su capacidad máxima" }, 400)
         }
 
-        const enrollment = await prisma.enrollment.create({
-          data,
-          include: {
-            student: {
-              select: { id: true, name: true, dni: true, email: true },
-            },
-            course: {
-              include: { year: true },
+        // Verificar si ya está matriculado
+        const existing = await prisma.enrollment.findUnique({
+          where: {
+            studentId_courseId: {
+              studentId,
+              courseId,
             },
           },
-        });
+        })
+
+        if (existing) {
+          return c.json({ message: "El estudiante ya está matriculado en este curso" }, 400)
+        }
+
+        // Crear matrícula
+        const enrollment = await prisma.enrollment.create({
+          data: {
+            studentId,
+            courseId,
+            status: "ACTIVE",
+          },
+          include: {
+            student: {
+              select: {
+                id: true,
+                name: true,
+                dni: true,
+              },
+            },
+            course: {
+              select: {
+                id: true,
+                name: true,
+                academicYear: true,
+              },
+            },
+          },
+        })
 
         return c.json(
           { message: "Estudiante matriculado exitosamente", enrollment },
           201
-        );
+        )
       } catch (error) {
-        console.error(error);
-        return c.json({ message: "Error al matricular el estudiante" }, 500);
+        console.error(error)
+        return c.json({ message: "Error al matricular estudiante" }, 500)
       }
     }
   )
-  .put(
-    "/:id",
-    zValidator("json", updateEnrollmentSchema, (result, c) => {
-      if (!result.success) {
-        return c.json(
-          { message: "Datos inválidos", errors: result.error.issues },
-          400
-        );
-      }
-    }),
-    async (c) => {
-      const prisma = c.get("prisma");
-      const id = c.req.param("id");
-      const data = c.req.valid("json");
-
-      try {
-        const enrollment = await prisma.enrollment.update({
-          where: { id },
-          data,
-          include: {
-            student: {
-              select: { id: true, name: true, dni: true, email: true },
-            },
-            course: {
-              include: { year: true },
-            },
-          },
-        });
-
-        return c.json(
-          { message: "Matrícula actualizada exitosamente", enrollment },
-          200
-        );
-      } catch (error) {
-        console.error(error);
-        return c.json({ message: "Error al actualizar la matrícula" }, 500);
-      }
-    }
-  )
-  .delete("/:id", async (c) => {
-    const prisma = c.get("prisma");
-    const id = c.req.param("id");
+  // Desmatricular estudiante
+  .delete("/:studentId/:courseId", async (c) => {
+    const prisma = c.get("prisma")
+    const studentId = c.req.param("studentId")
+    const courseId = c.req.param("courseId")
 
     try {
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          studentId_courseId: {
+            studentId,
+            courseId,
+          },
+        },
+      })
+
+      if (!enrollment) {
+        return c.json({ message: "Matrícula no encontrada" }, 404)
+      }
+
       await prisma.enrollment.delete({
-        where: { id },
-      });
+        where: {
+          studentId_courseId: {
+            studentId,
+            courseId,
+          },
+        },
+      })
 
-      return c.json({ message: "Matrícula eliminada exitosamente" }, 200);
+      return c.json({ message: "Estudiante desmatriculado exitosamente" }, 200)
     } catch (error) {
-      console.error(error);
-      return c.json({ message: "Error al eliminar la matrícula" }, 500);
+      console.error(error)
+      return c.json({ message: "Error al desmatricular estudiante" }, 500)
     }
-  });
+  })
 
-export default app;
+export default app
