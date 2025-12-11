@@ -41,7 +41,7 @@ const SelectTrigger = React.forwardRef<HTMLSelectElement, SelectProps>(
 )
 SelectTrigger.displayName = "SelectTrigger"
 
-const SelectValue = ({ placeholder }: { placeholder?: string }) => {
+const SelectValue = () => {
   return null // No se necesita para select nativo
 }
 
