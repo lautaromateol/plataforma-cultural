@@ -8,3 +8,11 @@ export const createCourseSubjectSchema = z.object({
 });
 
 export const updateCourseSubjectSchema = createCourseSubjectSchema.partial();
+
+// Schema para el formulario de asignación de profesor
+export const assignTeacherFormSchema = z.object({
+  teacherId: z.string().min(1, "Debes seleccionar un profesor"),
+  schedule: z.string().optional(),
+});
+
+export type AssignTeacherFormValues = z.infer<typeof assignTeacherFormSchema>;
