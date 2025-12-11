@@ -62,21 +62,49 @@ const app = new Hono()
       const course = await prisma.course.findUnique({
         where: { id },
         include: {
-          year: true,
+          year: {
+            include: {
+              // Incluir TODAS las materias del año
+              subjects: {
+                orderBy: { name: "asc" },
+              },
+            },
+          },
           courseSubjects: {
             include: {
               subject: true,
               teacher: {
-                select: { name: true, email: true },
+                select: { 
+                  id: true, 
+                  name: true, 
+                  dni: true, 
+                  email: true,
+                  teacherProfile: true,
+                },
               },
             },
           },
           enrollments: {
             include: {
               student: {
-                select: { id: true, name: true, dni: true, email: true },
+                select: { 
+                  id: true, 
+                  name: true, 
+                  dni: true, 
+                  email: true,
+                  role: true,
+                  studentProfile: true,
+                },
               },
             },
+            orderBy: {
+              student: {
+                name: "asc",
+              },
+            },
+          },
+          _count: {
+            select: { enrollments: true },
           },
         },
       });
@@ -85,7 +113,31 @@ const app = new Hono()
         return c.json({ message: "Curso no encontrado" }, 404);
       }
 
-      return c.json({ course }, 200);
+      // Crear mapa de CourseSubject para acceso rápido
+      const courseSubjectMap = new Map(
+        course.courseSubjects.map((cs) => [cs.subjectId, cs])
+      );
+
+      // Combinar materias del año con info de CourseSubject
+      const subjectsWithAssignment = course.year.subjects.map((subject) => {
+        const assignment = courseSubjectMap.get(subject.id);
+        return {
+          id: subject.id,
+          name: subject.name,
+          code: subject.code,
+          description: subject.description,
+          courseSubjectId: assignment?.id || null,
+          schedule: assignment?.schedule || null,
+          teacher: assignment?.teacher || null,
+        };
+      });
+
+      return c.json({ 
+        course: {
+          ...course,
+          subjectsWithAssignment,
+        }
+      }, 200);
     } catch (error) {
       console.error(error);
       return c.json({ message: "Error al obtener el curso" }, 500);

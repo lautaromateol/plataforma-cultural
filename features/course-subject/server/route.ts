@@ -58,38 +58,55 @@ const app = new Hono()
       const data = c.req.valid("json");
 
       try {
-        const existingAssignment = await prisma.courseSubject.findFirst({
-          where: {
-            courseId: data.courseId,
-            subjectId: data.subjectId,
-          },
-        });
-
-        if (existingAssignment) {
-          return c.json(
-            { message: "Esta materia ya está asignada a este curso" },
-            400
-          );
+        // Verificar si el profesor es válido (si se proporciona)
+        if (data.teacherId) {
+          const teacher = await prisma.user.findUnique({
+            where: { id: data.teacherId },
+          });
+          if (!teacher || teacher.role !== "TEACHER") {
+            return c.json(
+              { message: "El profesor seleccionado no existe o no tiene rol de profesor" },
+              400
+            );
+          }
         }
 
-        const courseSubject = await prisma.courseSubject.create({
-          data,
+        // Usar upsert: crea si no existe, actualiza si existe
+        const courseSubject = await prisma.courseSubject.upsert({
+          where: {
+            courseId_subjectId: {
+              courseId: data.courseId,
+              subjectId: data.subjectId,
+            },
+          },
+          update: {
+            teacherId: data.teacherId || null,
+            schedule: data.schedule || null,
+          },
+          create: {
+            courseId: data.courseId,
+            subjectId: data.subjectId,
+            teacherId: data.teacherId || null,
+            schedule: data.schedule || null,
+          },
           include: {
             course: true,
             subject: true,
             teacher: {
-              select: { name: true, email: true },
+              select: { id: true, name: true, email: true },
             },
           },
         });
 
-        return c.json(
-          { message: "Materia asignada al curso exitosamente", courseSubject },
-          201
-        );
+        const isNew = courseSubject.createdAt.getTime() === courseSubject.updatedAt.getTime();
+        const message = isNew
+          ? "Profesor asignado a la materia exitosamente"
+          : "Asignación de profesor actualizada exitosamente";
+
+        return c.json({ message, courseSubject }, 201);
       } catch (error) {
         console.error(error);
-        return c.json({ message: "Error al asignar la materia al curso" }, 500);
+        return c.json({ message: "Error al asignar profesor a la materia" }, 500);
       }
     }
   )

@@ -67,7 +67,7 @@ const app = new Hono()
         );
       }
 
-      if (dbUser.firstLogin) {
+      if (dbUser.firstLogin && !dbUser.isVerified) {
         return c.json(
           {
             name: dbUser.name,
@@ -108,6 +108,7 @@ const app = new Hono()
       return c.json(
         {
           ok: true,
+          role: dbUser.role
         },
         200
       );
