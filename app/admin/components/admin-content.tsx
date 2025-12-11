@@ -7,23 +7,6 @@ import { CourseCRUDPanel } from "@/features/course/components/course-crud-panel"
 import { UserCRUDPanel } from "@/features/user/components/user-crud-panel"
 import { DashboardOverview } from "./dashboard-overview"
 import { SectionHeader } from "./section-header"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-
-function Placeholder({ label }: { label: string }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{label}</CardTitle>
-        <CardDescription>Esta sección está en desarrollo</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-muted-foreground">Próximamente disponible</p>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 export function AdminContent() {
   const searchParams = useSearchParams()
