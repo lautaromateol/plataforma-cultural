@@ -1,24 +1,16 @@
 import { client } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
 
-type User = {
-  id: string;
-  dni: string;
-  email: string | null;
-  name: string;
-  role: "STUDENT" | "TEACHER" | "ADMIN";
-  isVerified: boolean;
-  firstLogin: boolean;
-  createdAt: string;
-  studentProfile?: any;
-  teacherProfile?: any;
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type GetUsersEndpoint = (typeof client.api.admin.users)["$get"];
+type GetUsersResponse = Awaited<ReturnType<GetUsersEndpoint>>;
+type GetUsersJson = Awaited<ReturnType<GetUsersResponse["json"]>>;
 
-type UsersResponse = {
-  users: User[];
-  message?: string;
-  status?: number;
-};
+type SuccessResponse = Extract<GetUsersJson, { users: unknown }>;
+type ErrorResponse = Extract<GetUsersJson, { message: string }>;
+
+// Tipo exportado para uso en componentes
+export type User = NonNullable<SuccessResponse["users"]>[number];
 
 type UseGetUsersParams = {
   role?: "STUDENT" | "TEACHER" | "ADMIN";
@@ -36,15 +28,23 @@ export function useGetUsers(params?: UseGetUsersParams) {
       const response = await client.api.admin.users.$get({
         query: queryParams,
       });
-      const data = (await response.json()) as any;
+
+      const jsonData = (await response.json()) as unknown as GetUsersJson;
+
       if (response.status !== 200) {
-        const error = new Error(data.message || "Error al obtener los usuarios");
-        (error as any).status = response.status;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(
+          errorData.message || "Error al obtener los usuarios"
+        );
+        Object.assign(error, { status: response.status });
         throw error;
       }
-      return data.users as User[];
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData.users;
     },
   });
+
   return {
     users: query.data,
     isPending: query.isPending,

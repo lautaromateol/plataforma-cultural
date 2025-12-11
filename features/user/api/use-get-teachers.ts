@@ -1,34 +1,39 @@
 import { client } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
 
-type Teacher = {
-  id: string;
-  dni: string;
-  email: string | null;
-  name: string;
-  teacherProfile?: any;
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type GetTeachersEndpoint = (typeof client.api.admin.users.teachers)["$get"];
+type GetTeachersResponse = Awaited<ReturnType<GetTeachersEndpoint>>;
+type GetTeachersJson = Awaited<ReturnType<GetTeachersResponse["json"]>>;
 
-type TeachersResponse = {
-  teachers: Teacher[];
-  message?: string;
-  status?: number;
-};
+type SuccessResponse = Extract<GetTeachersJson, { teachers: unknown }>;
+type ErrorResponse = Extract<GetTeachersJson, { message: string }>;
+
+// Tipo exportado para uso en componentes
+export type Teacher = NonNullable<SuccessResponse["teachers"]>[number];
 
 export function useGetTeachers() {
   const query = useQuery<Teacher[], Error>({
     queryKey: ["teachers"],
     queryFn: async () => {
       const response = await client.api.admin.users.teachers.$get();
-      const data = (await response.json()) as any;
+
+      const jsonData = (await response.json()) as unknown as GetTeachersJson;
+
       if (response.status !== 200) {
-        const error = new Error(data.message || "Error al obtener los profesores");
-        (error as any).status = response.status;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(
+          errorData.message || "Error al obtener los profesores"
+        );
+        Object.assign(error, { status: response.status });
         throw error;
       }
-      return data.teachers as Teacher[];
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData.teachers;
     },
   });
+
   return {
     teachers: query.data,
     isPending: query.isPending,

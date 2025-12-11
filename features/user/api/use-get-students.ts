@@ -1,42 +1,39 @@
 import { client } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
 
-type Student = {
-  id: string;
-  dni: string;
-  email: string | null;
-  name: string;
-  studentProfile?: any;
-  enrollments?: Array<{
-    id: string;
-    course: {
-      id: string;
-      name: string;
-      year?: any;
-    };
-  }>;
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type GetStudentsEndpoint = (typeof client.api.admin.users.students)["$get"];
+type GetStudentsResponse = Awaited<ReturnType<GetStudentsEndpoint>>;
+type GetStudentsJson = Awaited<ReturnType<GetStudentsResponse["json"]>>;
 
-type StudentsResponse = {
-  students: Student[];
-  message?: string;
-  status?: number;
-};
+type SuccessResponse = Extract<GetStudentsJson, { students: unknown }>;
+type ErrorResponse = Extract<GetStudentsJson, { message: string }>;
+
+// Tipo exportado para uso en componentes
+export type Student = NonNullable<SuccessResponse["students"]>[number];
 
 export function useGetStudents() {
   const query = useQuery<Student[], Error>({
     queryKey: ["students"],
     queryFn: async () => {
       const response = await client.api.admin.users.students.$get();
-      const data = (await response.json()) as any;
+
+      const jsonData = (await response.json()) as unknown as GetStudentsJson;
+
       if (response.status !== 200) {
-        const error = new Error(data.message || "Error al obtener los estudiantes");
-        (error as any).status = response.status;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(
+          errorData.message || "Error al obtener los estudiantes"
+        );
+        Object.assign(error, { status: response.status });
         throw error;
       }
-      return data.students as Student[];
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData.students;
     },
   });
+
   return {
     students: query.data,
     isPending: query.isPending,

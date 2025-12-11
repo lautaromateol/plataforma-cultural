@@ -2,10 +2,13 @@ import { client } from "@/lib/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-type ResponseType = {
-  message: string;
-  status?: number;
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type DeleteUserEndpoint = (typeof client.api.admin.users)[":id"]["$delete"];
+type DeleteUserResponse = Awaited<ReturnType<DeleteUserEndpoint>>;
+type DeleteUserJson = Awaited<ReturnType<DeleteUserResponse["json"]>>;
+
+type SuccessResponse = Extract<DeleteUserJson, { message: string }>;
+type ErrorResponse = Extract<DeleteUserJson, { message: string }>;
 
 export function useDeleteUser() {
   const queryClient = useQueryClient();
@@ -14,22 +17,23 @@ export function useDeleteUser() {
     error,
     mutate: deleteUser,
     isPending: isDeletingUser,
-  } = useMutation<ResponseType, Error, string>({
+  } = useMutation<SuccessResponse, Error, string>({
     mutationFn: async (id) => {
       const response = await client.api.admin.users[":id"]["$delete"]({
         param: { id },
       });
-      const json = await response.json();
+
+      const jsonData = (await response.json()) as unknown as DeleteUserJson;
+
       if (response.status !== 200) {
-        const error = new Error(json.message || "Error al eliminar el usuario");
-        (error as any).status = response.status;
-        (error as any).data = json;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(errorData.message || "Error al eliminar el usuario");
+        Object.assign(error, { status: response.status, data: errorData });
         throw error;
       }
-      return {
-        ...json,
-        status: response.status,
-      };
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
     },
     onSuccess: (_, id) => {
       toast.success("Usuario eliminado exitosamente");
@@ -42,6 +46,7 @@ export function useDeleteUser() {
       toast.error(error.message || "Error al eliminar el usuario");
     },
   });
+
   return { data, error, deleteUser, isDeletingUser };
 }
 

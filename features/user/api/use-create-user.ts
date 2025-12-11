@@ -1,17 +1,15 @@
 import { client } from "@/lib/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { InferRequestType } from "hono";
+import type { InferRequestType } from "hono";
 
-type RequestType = InferRequestType<
-  (typeof client.api.admin.users)["$post"]
->["json"];
+// Tipos inferidos automáticamente desde la ruta del servidor
+type CreateUserEndpoint = (typeof client.api.admin.users)["$post"];
+type RequestType = InferRequestType<CreateUserEndpoint>["json"];
+type CreateUserResponse = Awaited<ReturnType<CreateUserEndpoint>>;
+type CreateUserJson = Awaited<ReturnType<CreateUserResponse["json"]>>;
 
-type ResponseType = {
-  message: string;
-  user?: any;
-  status?: number;
-  errors?: any;
-};
+type SuccessResponse = Extract<CreateUserJson, { user: unknown }>;
+type ErrorResponse = Extract<CreateUserJson, { message: string }>;
 
 export function useCreateUser() {
   const queryClient = useQueryClient();
@@ -21,20 +19,20 @@ export function useCreateUser() {
     mutate: createUser,
     mutateAsync: createUserAsync,
     isPending: isCreatingUser,
-  } = useMutation<ResponseType, Error, RequestType>({
+  } = useMutation<SuccessResponse, Error, RequestType>({
     mutationFn: async (json) => {
       const response = await client.api.admin.users.$post({ json });
-      const data = await response.json();
+      const jsonData = (await response.json()) as unknown as CreateUserJson;
+
       if (response.status !== 201) {
-        const error = new Error(data.message || "Error al crear el usuario");
-        (error as any).status = response.status;
-        (error as any).data = data;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(errorData.message || "Error al crear el usuario");
+        Object.assign(error, { status: response.status, data: errorData });
         throw error;
       }
-      return {
-        ...data,
-        status: response.status,
-      };
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -42,6 +40,7 @@ export function useCreateUser() {
       queryClient.invalidateQueries({ queryKey: ["students"] });
     },
   });
+
   return { data, error, createUser, createUserAsync, isCreatingUser };
 }
 

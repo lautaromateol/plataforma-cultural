@@ -1,37 +1,16 @@
 import { client } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
 
-type UserDetails = {
-  id: string;
-  dni: string;
-  email: string | null;
-  name: string;
-  role: "STUDENT" | "TEACHER" | "ADMIN";
-  isVerified: boolean;
-  firstLogin: boolean;
-  createdAt: string;
-  studentProfile?: any;
-  teacherProfile?: any;
-  enrollments?: Array<{
-    id: string;
-    course: {
-      id: string;
-      name: string;
-      year?: any;
-    };
-  }>;
-  courseSubjects?: Array<{
-    id: string;
-    course: any;
-    subject: any;
-  }>;
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type GetUserEndpoint = (typeof client.api.admin.users)[":id"]["$get"];
+type GetUserResponse = Awaited<ReturnType<GetUserEndpoint>>;
+type GetUserJson = Awaited<ReturnType<GetUserResponse["json"]>>;
 
-type UserResponse = {
-  user?: UserDetails;
-  message?: string;
-  status?: number;
-};
+type SuccessResponse = Extract<GetUserJson, { user: unknown }>;
+type ErrorResponse = Extract<GetUserJson, { message: string }>;
+
+// Tipo exportado para uso en componentes
+export type UserDetails = NonNullable<SuccessResponse["user"]>;
 
 export function useGetUser(id: string) {
   const query = useQuery<UserDetails | undefined, Error>({
@@ -40,16 +19,24 @@ export function useGetUser(id: string) {
       const response = await client.api.admin.users[":id"].$get({
         param: { id },
       });
-      const data = (await response.json()) as any;
+
+      const jsonData = (await response.json()) as unknown as GetUserJson;
+
       if (response.status !== 200) {
-        const error = new Error(data.message || "Error al obtener el usuario");
-        (error as any).status = response.status;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(
+          errorData.message || "Error al obtener el usuario"
+        );
+        Object.assign(error, { status: response.status });
         throw error;
       }
-      return data.user as UserDetails;
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData.user;
     },
     enabled: !!id,
   });
+
   return {
     user: query.data,
     isPending: query.isPending,
