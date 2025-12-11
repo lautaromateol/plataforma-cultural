@@ -1,18 +1,21 @@
-import { client } from "@/lib/client"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { client } from "@/lib/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+// Tipos inferidos automáticamente desde la ruta del servidor
+type UnenrollStudentEndpoint = (typeof client.api.admin.enrollment)[":studentId"][":courseId"]["$delete"];
+type UnenrollStudentResponse = Awaited<ReturnType<UnenrollStudentEndpoint>>;
+type UnenrollStudentJson = Awaited<ReturnType<UnenrollStudentResponse["json"]>>;
+
+type SuccessResponse = Extract<UnenrollStudentJson, { message: string }>;
+type ErrorResponse = Extract<UnenrollStudentJson, { message: string }>;
 
 type RequestType = {
-  studentId: string
-  courseId: string
-}
-
-type ResponseType = {
-  message: string
-  status: number
-}
+  studentId: string;
+  courseId: string;
+};
 
 export function useUnenrollStudent() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   const {
     data,
@@ -20,34 +23,32 @@ export function useUnenrollStudent() {
     mutate: unenrollStudent,
     mutateAsync: unenrollStudentAsync,
     isPending: isUnenrolling,
-  } = useMutation<ResponseType, Error, RequestType>({
+  } = useMutation<SuccessResponse, Error, RequestType>({
     mutationFn: async ({ studentId, courseId }) => {
-      const response = await client.api.admin.enrollment[":studentId"][
-        ":courseId"
-      ].$delete({
+      const response = await client.api.admin.enrollment[":studentId"][":courseId"].$delete({
         param: { studentId, courseId },
-      })
-      const data = await response.json()
-      if (response.status !== 200) {
-        const error = new Error(
-          data.message || "Error al desmatricular estudiante"
-        )
-        ;(error as any).status = response.status
-        ;(error as any).data = data
-        throw error
-      }
-      return {
-        ...data,
-        status: response.status,
-      }
-    },
-    onSuccess: () => {
-      // Invalidar queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ["year-details"] })
-      queryClient.invalidateQueries({ queryKey: ["courses"] })
-    },
-  })
+      });
 
-  return { data, error, unenrollStudent, unenrollStudentAsync, isUnenrolling }
+      const jsonData = (await response.json()) as unknown as UnenrollStudentJson;
+
+      if (response.status !== 200) {
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(errorData.message || "Error al desmatricular estudiante");
+        Object.assign(error, { status: response.status, data: errorData });
+        throw error;
+      }
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
+    },
+    onSuccess: (_, variables) => {
+      // Invalidar queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ["year-details"] });
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      queryClient.invalidateQueries({ queryKey: ["course", variables.courseId] });
+    },
+  });
+
+  return { data, error, unenrollStudent, unenrollStudentAsync, isUnenrolling };
 }
 

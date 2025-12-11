@@ -1,19 +1,18 @@
-import { client } from "@/lib/client"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { InferRequestType } from "hono"
+import { client } from "@/lib/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { InferRequestType } from "hono";
 
-type RequestType = InferRequestType<
-  (typeof client.api.admin.enrollment)["$post"]
->["json"]
+// Tipos inferidos automáticamente desde la ruta del servidor
+type EnrollStudentEndpoint = (typeof client.api.admin.enrollment)["$post"];
+type RequestType = InferRequestType<EnrollStudentEndpoint>["json"];
+type EnrollStudentResponse = Awaited<ReturnType<EnrollStudentEndpoint>>;
+type EnrollStudentJson = Awaited<ReturnType<EnrollStudentResponse["json"]>>;
 
-type ResponseType = {
-  message: string
-  enrollment?: any
-  status: number
-}
+type SuccessResponse = Extract<EnrollStudentJson, { enrollment?: unknown }>;
+type ErrorResponse = Extract<EnrollStudentJson, { message: string }>;
 
 export function useEnrollStudent() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   const {
     data,
@@ -21,28 +20,28 @@ export function useEnrollStudent() {
     mutate: enrollStudent,
     mutateAsync: enrollStudentAsync,
     isPending: isEnrolling,
-  } = useMutation<ResponseType, Error, RequestType>({
+  } = useMutation<SuccessResponse, Error, RequestType>({
     mutationFn: async (json) => {
-      const response = await client.api.admin.enrollment.$post({ json })
-      const data = await response.json()
+      const response = await client.api.admin.enrollment.$post({ json });
+      const jsonData = (await response.json()) as unknown as EnrollStudentJson;
+
       if (response.status !== 201) {
-        const error = new Error(data.message || "Error al matricular estudiante")
-        ;(error as any).status = response.status
-        ;(error as any).data = data
-        throw error
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(errorData.message || "Error al matricular estudiante");
+        Object.assign(error, { status: response.status, data: errorData });
+        throw error;
       }
-      return {
-        ...data,
-        status: response.status,
-      }
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
     },
     onSuccess: () => {
       // Invalidar queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ["year-details"] })
-      queryClient.invalidateQueries({ queryKey: ["courses"] })
+      queryClient.invalidateQueries({ queryKey: ["year-details"] });
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
     },
-  })
+  });
 
-  return { data, error, enrollStudent, enrollStudentAsync, isEnrolling }
+  return { data, error, enrollStudent, enrollStudentAsync, isEnrolling };
 }
 
