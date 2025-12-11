@@ -1,40 +1,41 @@
 import { client } from "@/lib/client";
 import { useMutation } from "@tanstack/react-query";
-import { InferRequestType } from "hono";
+import type { InferRequestType } from "hono";
 
-type RequestType = InferRequestType<
-  (typeof client.api.auth)["create-mail"]["$patch"]
->["json"];
-type ResponseType = {
-  message: string;
-  status: number;
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type CreateMailEndpoint = (typeof client.api.auth)["create-mail"]["$patch"];
+type RequestType = InferRequestType<CreateMailEndpoint>["json"];
+type CreateMailResponse = Awaited<ReturnType<CreateMailEndpoint>>;
+type CreateMailJson = Awaited<ReturnType<CreateMailResponse["json"]>>;
+
+type SuccessResponse = Extract<CreateMailJson, { message: string }>;
+type ErrorResponse = Extract<CreateMailJson, { message: string }>;
+
 export function useCreateMail() {
   const {
     data,
     error,
     mutate: createMail,
     isPending: isCreatingMail,
-  } = useMutation<ResponseType, Error, RequestType>({
+  } = useMutation<SuccessResponse, Error, RequestType>({
     mutationFn: async (json) => {
-      const response = await client.api.auth["create-mail"]["$patch"]({ json });
+      const response = await client.api.auth["create-mail"]["$patch"]({
+        json,
+      });
+
+      const jsonData = (await response.json()) as unknown as CreateMailJson;
 
       if (response.status !== 200) {
-        const errorData = await response.json();
+        const errorData = jsonData as unknown as ErrorResponse;
         const error = new Error(errorData.message || "");
-        (error as any).status = response.status;
-        (error as any).data = errorData;
+        Object.assign(error, { status: response.status, data: errorData });
         throw error;
       }
 
-      const data = await response.json();
-
-      return {
-        ...data,
-        status: response.status,
-      };
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
     },
   });
 
-  return { data, error, createMail, isCreatingMail }
+  return { data, error, createMail, isCreatingMail };
 }

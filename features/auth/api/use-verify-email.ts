@@ -1,14 +1,15 @@
 import { client } from "@/lib/client";
 import { useMutation } from "@tanstack/react-query";
-import { InferRequestType } from "hono";
+import type { InferRequestType } from "hono";
 
-type RequestType = InferRequestType<
-  (typeof client.api.auth)["verify-email"]["$patch"]
->["query"];
-type ResponseType = {
-  message: string;
-  status: number;
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type VerifyEmailEndpoint = (typeof client.api.auth)["verify-email"]["$patch"];
+type RequestType = InferRequestType<VerifyEmailEndpoint>["query"];
+type VerifyEmailResponse = Awaited<ReturnType<VerifyEmailEndpoint>>;
+type VerifyEmailJson = Awaited<ReturnType<VerifyEmailResponse["json"]>>;
+
+type SuccessResponse = Extract<VerifyEmailJson, { message: string }>;
+type ErrorResponse = Extract<VerifyEmailJson, { message: string }>;
 
 export function useVerifyEmail() {
   const {
@@ -16,26 +17,24 @@ export function useVerifyEmail() {
     mutate: verifyEmail,
     isPending: isVerifying,
     error,
-  } = useMutation<ResponseType, Error, RequestType>({
+  } = useMutation<SuccessResponse, Error, RequestType>({
     mutationFn: async (query) => {
       const response = await client.api.auth["verify-email"]["$patch"]({ query });
 
-      const data = await response.json();
+      const jsonData = (await response.json()) as unknown as VerifyEmailJson;
 
       if (response.status !== 200) {
+        const errorData = jsonData as unknown as ErrorResponse;
         const error = new Error(
-          data.message ||
+          errorData.message ||
             "Se ha producido un error al intentar verificar el correo electrónico."
         );
-        (error as any).status = response.status;
-        (error as any).data = data;
+        Object.assign(error, { status: response.status, data: errorData });
         throw error;
       }
 
-      return {
-        ...data,
-        status: response.status,
-      };
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
     },
   });
 

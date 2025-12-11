@@ -1,48 +1,50 @@
 import { client } from "@/lib/client";
 import { useMutation } from "@tanstack/react-query";
-import { InferRequestType } from "hono";
+import type { InferRequestType } from "hono";
 import { useRouter } from "next/navigation";
 
-type RequestType = InferRequestType<
-  (typeof client.api.auth.login)["$post"]
->["json"];
+// Tipos inferidos automáticamente desde la ruta del servidor
+type LoginEndpoint = (typeof client.api.auth.login)["$post"];
+type RequestType = InferRequestType<LoginEndpoint>["json"];
+type LoginResponse = Awaited<ReturnType<LoginEndpoint>>;
+type LoginJson = Awaited<ReturnType<LoginResponse["json"]>>;
 
-type ResponseType =
-  | { message: string; status: number }
-  | { dni:string; name: string; redirect: true; status: number }
-  | { ok: boolean; status: number };
+type SuccessResponse = Extract<
+  LoginJson,
+  { ok?: boolean } | { redirect?: boolean }
+>;
+type ErrorResponse = Extract<LoginJson, { message: string }>;
 
 export function useLogin() {
-  const router = useRouter()
+  const router = useRouter();
 
   const {
     data,
     error,
     mutate: login,
     isPending: isLogginIn,
-  } = useMutation<ResponseType, Error, RequestType>({
+  } = useMutation<SuccessResponse, Error, RequestType>({
     mutationFn: async (json) => {
       const response = await client.api.auth.login["$post"]({ json });
 
       if (response.status === 401 || response.status === 403) {
-        const errorData = await response.json();
-        const error = new Error(errorData.message || "Tus credenciales son incorrectas.");
-        (error as any).status = response.status;
-        (error as any).data = errorData;
+        const errorData = (await response.json()) as unknown as ErrorResponse;
+        const error = new Error(
+          errorData.message || "Tus credenciales son incorrectas."
+        );
+        Object.assign(error, { status: response.status, data: errorData });
         throw error;
       }
 
-      const data = await response.json();
-      return {
-        ...data,
-        status: response.status,
-      };
+      const jsonData = (await response.json()) as unknown as LoginJson;
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
     },
-    onSuccess:(data) => {
-      if(data.status === 200) {
-        router.replace("/campus")
+    onSuccess: (data) => {
+      if ("ok" in data && data.ok) {
+        router.replace(data.role === "ADMIN" ? "/admin" : "/campus");
       }
-    }
+    },
   });
 
   return { data, error, login, isLogginIn };

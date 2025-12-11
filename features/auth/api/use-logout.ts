@@ -1,35 +1,40 @@
 import { client } from "@/lib/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
-type ResponseType = {
-  message: string;
-  status?: number;
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type LogoutEndpoint = (typeof client.api.auth.logout)["$post"];
+type LogoutResponse = Awaited<ReturnType<LogoutEndpoint>>;
+type LogoutJson = Awaited<ReturnType<LogoutResponse["json"]>>;
+
+type SuccessResponse = Extract<LogoutJson, { message: string }>;
+type ErrorResponse = Extract<LogoutJson, { message: string }>;
 
 export function useLogout() {
   const router = useRouter();
+  const queryClient = useQueryClient()
 
   const {
     mutate: logout,
     isPending: isLoggingOut,
-  } = useMutation<ResponseType, Error, void>({
+  } = useMutation<SuccessResponse, Error, void>({
     mutationFn: async () => {
       const response = await client.api.auth.logout["$post"]();
-      const data = await response.json();
+      const jsonData = (await response.json()) as unknown as LogoutJson;
 
       if (response.status !== 200) {
-        const error = new Error(data.message || "Error al cerrar sesión");
-        (error as any).status = response.status;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(errorData.message || "Error al cerrar sesión");
+        Object.assign(error, { status: response.status });
         throw error;
       }
 
-      return {
-        ...data,
-        status: response.status,
-      };
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
     },
     onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["campus"] })
+      queryClient.removeQueries({ queryKey: ["currentUser"] })
       router.replace("/login");
     },
     onError: () => {

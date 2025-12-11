@@ -1,35 +1,39 @@
 import { client } from "@/lib/client";
-import { UserRole } from "@/src/generated/prisma/enums";
 import { useQuery } from "@tanstack/react-query";
 
-type UserData = {
-  id: string;
-  dni: string;
-  email: string | null;
-  name: string;
-  role: UserRole;
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type GetAuthUserEndpoint = (typeof client.api.auth)["$get"];
+type GetAuthUserResponse = Awaited<ReturnType<GetAuthUserEndpoint>>;
+type GetAuthUserJson = Awaited<ReturnType<GetAuthUserResponse["json"]>>;
+
+type SuccessResponse = Extract<GetAuthUserJson, { user: unknown }>;
+type ErrorResponse = Extract<GetAuthUserJson, { message: string }>;
+
+// Tipo exportado para uso en componentes
+export type UserData = NonNullable<SuccessResponse["user"]>;
 
 export function useGetUser() {
   const query = useQuery<UserData | null, Error>({
     queryKey: ["currentUser"],
     queryFn: async () => {
       const response = await client.api.auth.$get();
-      const data = await response.json();
+      const jsonData = (await response.json()) as unknown as GetAuthUserJson;
 
       if (response.status !== 200) {
-        const error = new Error(data.message);
-        (error as any).status = response.status;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(errorData.message);
+        Object.assign(error, { status: response.status });
         throw error;
       }
 
-      return (data as any).user;
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData.user;
     },
   });
 
-  return { 
-    user: query.data, 
-    isPending: query.isPending, 
-    error: query.error 
+  return {
+    user: query.data,
+    isPending: query.isPending,
+    error: query.error,
   };
 }
