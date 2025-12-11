@@ -89,7 +89,7 @@ export function StudentsTable({ data, courses }: StudentsTableProps) {
   // Filtrar estudiantes no matriculados en este año
   const enrolledStudentIds = new Set(data.map(s => s.id))
   const availableStudents = allUsers?.filter(
-    (user: any) => !enrolledStudentIds.has(user.id)
+    (user) => !enrolledStudentIds.has(user.id)
   ) || []
 
   const handleEnroll = async () => {
@@ -107,8 +107,9 @@ export function StudentsTable({ data, courses }: StudentsTableProps) {
       setEnrollDialogOpen(false)
       setSelectedStudent("")
       setSelectedCourse("")
-    } catch (error: any) {
-      toast.error(error.message || "Error al matricular estudiante")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error al matricular estudiante"
+      toast.error(message)
     }
   }
 
@@ -118,8 +119,9 @@ export function StudentsTable({ data, courses }: StudentsTableProps) {
     try {
       await unenrollStudentAsync({ studentId, courseId })
       toast.success("Estudiante desmatriculado exitosamente")
-    } catch (error: any) {
-      toast.error(error.message || "Error al desmatricular estudiante")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error al desmatricular estudiante"
+      toast.error(message)
     }
   }
 
@@ -291,7 +293,7 @@ export function StudentsTable({ data, courses }: StudentsTableProps) {
                     onChange={(e) => setSelectedStudent(e.target.value)}
                   >
                     <SelectItem value="">Seleccionar estudiante</SelectItem>
-                    {availableStudents.map((student: any) => (
+                    {availableStudents.map((student) => (
                       <SelectItem key={student.id} value={student.id}>
                         {student.name} ({student.dni})
                       </SelectItem>
