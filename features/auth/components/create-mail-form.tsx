@@ -1,6 +1,5 @@
 "use client";
 import z from "zod";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, AlertCircle } from "lucide-react";
@@ -56,8 +55,8 @@ export function CreateMailForm({
           Asocia un correo electrónico a tu cuenta, {name?.split(" ")[0]}
         </Label>
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-8">
-          {data && data.status === 200 && (
-            <div className="flex gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg">
+          {data && (
+            <div className="flex gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg">
               <AlertCircle className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
               <p className="text-sm text-indigo-700 dark:text-indigo-300">
                 {data.message}
@@ -94,9 +93,7 @@ export function CreateMailForm({
                         id="email"
                         placeholder="tu.email@ejemplo.com"
                         className="pl-10 bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
-                        disabled={
-                          isCreatingMail || (data && data.status === 200)
-                        }
+                        disabled={isCreatingMail || !!data}
                         {...field}
                       />
                     </FormControl>
