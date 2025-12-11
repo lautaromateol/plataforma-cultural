@@ -1,17 +1,15 @@
 import { client } from "@/lib/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { InferRequestType } from "hono";
+import type { InferRequestType } from "hono";
 
-type RequestType = InferRequestType<
-  (typeof client.api.admin.course[":id"])["$put"]
->["json"];
+// Tipos inferidos automáticamente desde la ruta del servidor
+type UpdateCourseEndpoint = (typeof client.api.admin.course)[":id"]["$put"];
+type RequestType = InferRequestType<UpdateCourseEndpoint>["json"];
+type UpdateCourseResponse = Awaited<ReturnType<UpdateCourseEndpoint>>;
+type UpdateCourseJson = Awaited<ReturnType<UpdateCourseResponse["json"]>>;
 
-type ResponseType = {
-  message: string;
-  course?: any;
-  status?: number;
-  errors?: any;
-};
+type SuccessResponse = Extract<UpdateCourseJson, { course: unknown }>;
+type ErrorResponse = Extract<UpdateCourseJson, { message: string }>;
 
 export function useUpdateCourse() {
   const queryClient = useQueryClient();
@@ -21,29 +19,31 @@ export function useUpdateCourse() {
     mutate: updateCourse,
     mutateAsync: updateCourseAsync,
     isPending: isUpdatingCourse,
-  } = useMutation<ResponseType, Error, { id: string; data: RequestType }>({
+  } = useMutation<SuccessResponse, Error, { id: string; data: RequestType }>({
     mutationFn: async ({ id, data }) => {
       const response = await client.api.admin.course[":id"]["$put"]({
         param: { id },
         json: data,
       });
-      const json = await response.json();
+
+      const jsonData = (await response.json()) as unknown as UpdateCourseJson;
+
       if (response.status !== 200) {
-        const error = new Error(json.message || "Error al actualizar el curso");
-        (error as any).status = response.status;
-        (error as any).data = json;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(errorData.message || "Error al actualizar el curso");
+        Object.assign(error, { status: response.status, data: errorData });
         throw error;
       }
-      return {
-        ...json,
-        status: response.status,
-      };
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", variables.id] });
     },
   });
+
   return { data, error, updateCourse, updateCourseAsync, isUpdatingCourse };
 }
 

@@ -1,28 +1,16 @@
 import { client } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
 
-type Course = {
-  id: string;
-  name: string;
-  academicYear: string;
-  capacity: number;
-  classroom?: string;
-  yearId: string;
-  createdAt: string;
-  updatedAt: string;
-  year?: any;
-  courseSubjects?: any[];
-  enrollments?: any[];
-  _count?: {
-    enrollments: number;
-  };
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type GetCoursesEndpoint = (typeof client.api.admin.course)["$get"];
+type GetCoursesResponse = Awaited<ReturnType<GetCoursesEndpoint>>;
+type GetCoursesJson = Awaited<ReturnType<GetCoursesResponse["json"]>>;
 
-type CoursesResponse = {
-  courses: Course[];
-  message?: string;
-  status?: number;
-};
+type SuccessResponse = Extract<GetCoursesJson, { courses: unknown }>;
+type ErrorResponse = Extract<GetCoursesJson, { message: string }>;
+
+// Tipo exportado para uso en componentes
+export type Course = NonNullable<SuccessResponse["courses"]>[number];
 
 type UseGetCoursesParams = {
   academicYear?: string;
@@ -40,15 +28,23 @@ export function useGetCourses(params?: UseGetCoursesParams) {
       const response = await client.api.admin.course.$get({
         query: queryParams,
       });
-      const data = (await response.json()) as any;
+
+      const jsonData = (await response.json()) as unknown as GetCoursesJson;
+
       if (response.status !== 200) {
-        const error = new Error(data.message || "Error al obtener los cursos");
-        (error as any).status = response.status;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(
+          errorData.message || "Error al obtener los cursos"
+        );
+        Object.assign(error, { status: response.status });
         throw error;
       }
-      return data.courses as Course[];
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData.courses;
     },
   });
+
   return {
     courses: query.data,
     isPending: query.isPending,
