@@ -1,37 +1,38 @@
 import { client } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
 
-type Year = {
-  id: string;
-  level: number;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-  subjects?: any[];
-  courses?: any[];
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type GetYearsEndpoint = (typeof client.api.admin)["academic-year"]["$get"];
+type GetYearsResponse = Awaited<ReturnType<GetYearsEndpoint>>;
+type GetYearsJson = Awaited<ReturnType<GetYearsResponse["json"]>>;
 
-type YearsResponse = {
-  years: Year[];
-  message?: string;
-  status?: number;
-};
+type SuccessResponse = Extract<GetYearsJson, { years: unknown }>;
+type ErrorResponse = Extract<GetYearsJson, { message: string }>;
+
+// Tipo exportado para uso en componentes
+export type Year = NonNullable<SuccessResponse["years"]>[number];
 
 export function useGetYears() {
   const query = useQuery<Year[], Error>({
     queryKey: ["years"],
     queryFn: async () => {
       const response = await client.api.admin["academic-year"].$get();
-      const data = await response.json();
+      const jsonData = (await response.json()) as unknown as GetYearsJson;
+
       if (response.status !== 200) {
-        const error = new Error(data.message || "Error al obtener los años");
-        (error as any).status = response.status;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(
+          errorData.message || "Error al obtener los años"
+        );
+        Object.assign(error, { status: response.status });
         throw error;
       }
-      return data.years;
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData.years;
     },
   });
+
   return {
     years: query.data,
     isPending: query.isPending,
