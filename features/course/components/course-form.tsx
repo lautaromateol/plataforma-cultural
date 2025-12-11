@@ -34,16 +34,35 @@ import { Loader2, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "sonner"
 
+type Year = {
+  id: string
+  level: number
+  name: string
+  description?: string
+}
+
+type Course = {
+  id: string
+  name: string
+  academicYear: string
+  capacity: number
+  classroom?: string
+  yearId: string
+}
+
 interface CourseFormProps {
-  initialData?: any
+  initialData?: Course
   onSuccess?: () => void
 }
+
+// Usar el tipo de output del schema para que capacity sea requerido
+type CourseFormData = z.output<typeof createCourseSchema>
 
 export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
   const isEdit = !!initialData
   const { years, isPending: isLoadingYears } = useGetYears()
 
-  const form = useForm<z.infer<typeof createCourseSchema>>({
+  const form = useForm<CourseFormData>({
     resolver: zodResolver(createCourseSchema),
     defaultValues: {
       name: initialData?.name ?? "",
@@ -69,7 +88,7 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
   const { createCourseAsync, isCreatingCourse } = useCreateCourse()
   const { updateCourseAsync, isUpdatingCourse } = useUpdateCourse()
 
-  async function onSubmit(data: z.infer<typeof createCourseSchema>) {
+  async function onSubmit(data: CourseFormData) {
     try {
       if (isEdit) {
         await updateCourseAsync({ id: initialData.id, data })
@@ -145,7 +164,7 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
                       disabled={isPending || isEdit}
                       placeholder="Selecciona un año escolar"
                     >
-                      {years.map((year: any) => (
+                      {years.map((year) => (
                         <SelectItem key={year.id} value={year.id}>
                           {year.name} (Nivel {year.level})
                         </SelectItem>

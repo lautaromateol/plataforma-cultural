@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import {
   ColumnDef,
   flexRender,
@@ -32,7 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AlertCircle, Edit, Trash2, Plus, ArrowUpDown, Search, School, Users } from "lucide-react"
+import { AlertCircle, Edit, Trash2, Plus, ArrowUpDown, Search, School, Users, Eye } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 
@@ -58,6 +59,7 @@ type CourseData = {
 }
 
 export function CourseTable({ onEdit, onCreate }: CourseTableProps) {
+  const router = useRouter()
   const { courses, isPending, error } = useGetCourses()
   const { deleteCourse, isDeletingCourse } = useDeleteCourse()
 
@@ -183,6 +185,14 @@ export function CourseTable({ onEdit, onCreate }: CourseTableProps) {
         const course = row.original
         return (
           <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push(`/admin/curso/${course.id}`)}
+              title="Ver detalles"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
             <Button
               variant="outline"
               size="sm"
