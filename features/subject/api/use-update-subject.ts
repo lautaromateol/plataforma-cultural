@@ -1,17 +1,15 @@
 import { client } from "@/lib/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { InferRequestType } from "hono";
+import type { InferRequestType } from "hono";
 
-type RequestType = InferRequestType<
-  (typeof client.api.admin.subject[":id"])["$put"]
->["json"];
+// Tipos inferidos automáticamente desde la ruta del servidor
+type UpdateSubjectEndpoint = (typeof client.api.admin.subject)[":id"]["$put"];
+type RequestType = InferRequestType<UpdateSubjectEndpoint>["json"];
+type UpdateSubjectResponse = Awaited<ReturnType<UpdateSubjectEndpoint>>;
+type UpdateSubjectJson = Awaited<ReturnType<UpdateSubjectResponse["json"]>>;
 
-type ResponseType = {
-  message: string;
-  subject?: any;
-  status?: number;
-  errors?: any;
-};
+type SuccessResponse = Extract<UpdateSubjectJson, { subject: unknown }>;
+type ErrorResponse = Extract<UpdateSubjectJson, { message: string }>;
 
 export function useUpdateSubject() {
   const queryClient = useQueryClient();
@@ -21,29 +19,31 @@ export function useUpdateSubject() {
     mutate: updateSubject,
     mutateAsync: updateSubjectAsync,
     isPending: isUpdatingSubject,
-  } = useMutation<ResponseType, Error, { id: string; data: RequestType }>({
+  } = useMutation<SuccessResponse, Error, { id: string; data: RequestType }>({
     mutationFn: async ({ id, data }) => {
       const response = await client.api.admin.subject[":id"]["$put"]({
         param: { id },
         json: data,
       });
-      const json = await response.json();
+
+      const jsonData = (await response.json()) as unknown as UpdateSubjectJson;
+
       if (response.status !== 200) {
-        const error = new Error(json.message || "Error al actualizar la materia");
-        (error as any).status = response.status;
-        (error as any).data = json;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(errorData.message || "Error al actualizar la materia");
+        Object.assign(error, { status: response.status, data: errorData });
         throw error;
       }
-      return {
-        ...json,
-        status: response.status,
-      };
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
       queryClient.invalidateQueries({ queryKey: ["subject", variables.id] });
     },
   });
+
   return { data, error, updateSubject, updateSubjectAsync, isUpdatingSubject };
 }
 

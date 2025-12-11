@@ -1,39 +1,42 @@
 import { client } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
 
-type SubjectDetails = {
-  id: string;
-  name: string;
-  code?: string;
-  description?: string;
-  yearId: string;
-  createdAt: string;
-  updatedAt: string;
-  year?: any;
-  courseSubjects?: any[];
-};
+// Tipos inferidos automáticamente desde la ruta del servidor
+type GetSubjectEndpoint = (typeof client.api.admin.subject)[":id"]["$get"];
+type GetSubjectResponse = Awaited<ReturnType<GetSubjectEndpoint>>;
+type GetSubjectJson = Awaited<ReturnType<GetSubjectResponse["json"]>>;
 
-type SubjectResponse = {
-  subject?: SubjectDetails;
-  message?: string;
-  status?: number;
-};
+type SuccessResponse = Extract<GetSubjectJson, { subject: unknown }>;
+type ErrorResponse = Extract<GetSubjectJson, { message: string }>;
+
+// Tipo exportado para uso en componentes
+export type SubjectDetails = NonNullable<SuccessResponse["subject"]>;
 
 export function useGetSubject(id: string) {
   const query = useQuery<SubjectDetails | undefined, Error>({
     queryKey: ["subject", id],
     queryFn: async () => {
-      const response = await client.api.admin.subject[":id"].$get({ param: { id } });
-      const data = await response.json();
+      const response = await client.api.admin.subject[":id"].$get({
+        param: { id },
+      });
+
+      const jsonData = (await response.json()) as unknown as GetSubjectJson;
+
       if (response.status !== 200) {
-        const error = new Error(data.message || "Error al obtener la materia");
-        (error as any).status = response.status;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(
+          errorData.message || "Error al obtener la materia"
+        );
+        Object.assign(error, { status: response.status });
         throw error;
       }
-      return data.subject;
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData.subject;
     },
     enabled: !!id,
   });
+
   return {
     subject: query.data,
     isPending: query.isPending,

@@ -1,17 +1,15 @@
 import { client } from "@/lib/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { InferRequestType } from "hono";
+import type { InferRequestType } from "hono";
 
-type RequestType = InferRequestType<
-  (typeof client.api.admin.subject)["$post"]
->["json"];
+// Tipos inferidos automáticamente desde la ruta del servidor
+type CreateSubjectEndpoint = (typeof client.api.admin.subject)["$post"];
+type RequestType = InferRequestType<CreateSubjectEndpoint>["json"];
+type CreateSubjectResponse = Awaited<ReturnType<CreateSubjectEndpoint>>;
+type CreateSubjectJson = Awaited<ReturnType<CreateSubjectResponse["json"]>>;
 
-type ResponseType = {
-  message: string;
-  subject?: any;
-  status?: number;
-  errors?: any;
-};
+type SuccessResponse = Extract<CreateSubjectJson, { subject: unknown }>;
+type ErrorResponse = Extract<CreateSubjectJson, { message: string }>;
 
 export function useCreateSubject() {
   const queryClient = useQueryClient();
@@ -21,28 +19,31 @@ export function useCreateSubject() {
     mutate: createSubject,
     mutateAsync: createSubjectAsync,
     isPending: isCreatingSubject,
-  } = useMutation<ResponseType, Error, { data: RequestType; yearId: string }>({
+  } = useMutation<SuccessResponse, Error, { data: RequestType; yearId: string }>({
     mutationFn: async ({ data: json, yearId }) => {
-      const response = await client.api.admin.subject.$post({
+      const response = await (client.api.admin.subject.$post as any)({
         json,
         query: { yearId },
       });
-      const data = await response.json();
+
+      const jsonData = (await response.json()) as unknown as CreateSubjectJson;
+
       if (response.status !== 201) {
-        const error = new Error(data.message || "Error al crear la materia");
-        (error as any).status = response.status;
-        (error as any).data = data;
+        const errorData = jsonData as unknown as ErrorResponse;
+        const error = new Error(errorData.message || "Error al crear la materia");
+        Object.assign(error, { status: response.status, data: errorData });
         throw error;
       }
-      return {
-        ...data,
-        status: response.status,
-      };
+
+      const successData = jsonData as unknown as SuccessResponse;
+      return successData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
+      queryClient.invalidateQueries({ queryKey: ["course"] });
     },
   });
+
   return { data, error, createSubject, createSubjectAsync, isCreatingSubject };
 }
 
