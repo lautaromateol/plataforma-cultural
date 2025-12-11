@@ -24,13 +24,15 @@ export default function VerificationPage() {
 
   useEffect(() => {
     if (!token) {
-      return router.replace("/login");
+      router.replace("/login");
+      return;
     }
 
     if (!hasRun.current) {
       hasRun.current = true;
       verifyEmail({ token });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
   return (
     <main className="min-h-screen bg-slate-100 flex items-center justify-center">
