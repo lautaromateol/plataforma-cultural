@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { createUserSchema, updateUserSchema } from "../schemas"
-import { useCreateUser } from "../api/use-create-user"
-import { useUpdateUser } from "../api/use-update-user"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import * as React from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { createUserSchema, updateUserSchema } from "../schemas";
+import { useCreateUser } from "../api/use-create-user";
+import { useUpdateUser } from "../api/use-update-user";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -18,36 +18,41 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from "@/components/ui/form"
-import {
-  Select,
-  SelectItem,
-} from "@/components/ui/select"
+} from "@/components/ui/form";
+import { Select, SelectItem } from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Loader2, Eye, EyeOff } from "lucide-react"
-import { useState } from "react"
-import { toast } from "sonner"
+} from "@/components/ui/card";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface UserFormProps {
-  initialData?: any
-  onSuccess?: () => void
+  initialData?: {
+    id: string;
+    dni: string;
+    email?: string | null;
+    name: string;
+    role: "STUDENT" | "TEACHER" | "ADMIN";
+  };
+  onSuccess?: () => void;
 }
 
-
-type UserFormData = z.infer<typeof createUserSchema> | z.infer<typeof updateUserSchema>
+type CreateUserData = z.infer<typeof createUserSchema>;
+type UpdateUserData = z.infer<typeof updateUserSchema>;
 
 export function UserForm({ initialData, onSuccess }: UserFormProps) {
-  const isEdit = !!initialData
-  const [showPassword, setShowPassword] = useState(false)
+  const isEdit = !!initialData;
+  const [showPassword, setShowPassword] = useState(false);
 
-  const form = useForm<z.infer<typeof createUserSchema>>({
-    resolver: zodResolver(isEdit ? updateUserSchema : createUserSchema),
+  const schema = isEdit ? updateUserSchema : createUserSchema;
+  
+  const form = useForm<CreateUserData | UpdateUserData>({
+    resolver: zodResolver(schema),
     defaultValues: {
       dni: initialData?.dni ?? "",
       email: initialData?.email ?? "",
@@ -55,60 +60,64 @@ export function UserForm({ initialData, onSuccess }: UserFormProps) {
       name: initialData?.name ?? "",
       role: initialData?.role ?? "STUDENT",
     },
-  })
+  });
 
   useEffect(() => {
     if (initialData) {
       form.reset({
         dni: initialData.dni ?? "",
         email: initialData.email ?? "",
-        password: "", // No prellenar password por seguridad
+        password: "",
         name: initialData.name ?? "",
         role: initialData.role ?? "STUDENT",
-      })
+      });
     }
-  }, [initialData, form])
+  }, [initialData, form]);
 
-  const { createUserAsync, isCreatingUser } = useCreateUser()
-  const { updateUserAsync, isUpdatingUser } = useUpdateUser()
+  const { createUserAsync, isCreatingUser } = useCreateUser();
+  const { updateUserAsync, isUpdatingUser } = useUpdateUser();
 
-  async function onSubmit(data: UserFormData) {
+  async function onSubmit(data: CreateUserData | UpdateUserData) {
     try {
-      if (isEdit) {
-        // En edición, solo enviar password si se proporcionó
+      if (isEdit && initialData) {
         const updateData: any = {
           dni: data.dni,
-          email: data.email,
+          email: data.email || undefined,
           name: data.name,
           role: data.role,
+        };
+        
+        // Solo incluir password si no está vacío
+        if (data.password && data.password.trim().length > 0) {
+          updateData.password = data.password;
         }
-        if (data.password && data.password.length > 0) {
-          updateData.password = data.password
-        }
-        await updateUserAsync({ id: initialData.id, data: updateData })
-        toast.success("Usuario actualizado exitosamente")
+        
+        await updateUserAsync({ id: initialData.id, data: updateData });
+        toast.success("Usuario actualizado exitosamente");
       } else {
-        // En creación, password es requerido
-        await createUserAsync(data)
-        toast.success("Usuario creado exitosamente")
+        await createUserAsync(data as CreateUserData);
+        toast.success("Usuario creado exitosamente");
       }
-      form.reset()
-      onSuccess?.()
-    } catch (error: any) {
-      const errorMessage = error?.message || (isEdit ? "Error al actualizar el usuario" : "Error al crear el usuario")
-      toast.error(errorMessage)
-      console.error("Error submitting form:", error)
+      form.reset();
+      onSuccess?.();
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : isEdit
+          ? "Error al actualizar el usuario"
+          : "Error al crear el usuario";
+      toast.error(errorMessage);
+      console.error("Error submitting form:", error);
     }
   }
 
-  const isPending = isCreatingUser || isUpdatingUser
+  const isPending = isCreatingUser || isUpdatingUser;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          {isEdit ? "Editar Usuario" : "Crear Usuario"}
-        </CardTitle>
+        <CardTitle>{isEdit ? "Editar Usuario" : "Crear Usuario"}</CardTitle>
         <CardDescription>
           {isEdit
             ? "Modifica la información del usuario"
@@ -132,7 +141,9 @@ export function UserForm({ initialData, onSuccess }: UserFormProps) {
                     />
                   </FormControl>
                   <FormDescription>
-                    {isEdit ? "El DNI no puede ser modificado" : "Debe ser único en el sistema"}
+                    {isEdit
+                      ? "El DNI no puede ser modificado"
+                      : "Debe ser único en el sistema"}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -265,6 +276,5 @@ export function UserForm({ initialData, onSuccess }: UserFormProps) {
         </Form>
       </CardContent>
     </Card>
-  )
+  );
 }
-
