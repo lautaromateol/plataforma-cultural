@@ -54,7 +54,7 @@ export function LoginForm() {
       { email, password, dni },
       {
         onSuccess: (data: any) => {
-          if (data.status === 301) {
+          if (data.redirect) {
             setCredentials({ ...data, password });
             setShowCreate(data.redirect);
           }
