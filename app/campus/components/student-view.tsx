@@ -245,71 +245,73 @@ function SubjectCard({
   };
 
   return (
-    <Card className="group relative overflow-hidden border-0 bg-white/70 backdrop-blur hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-      {/* Top color bar */}
-      <div className={`h-2 bg-gradient-to-r ${colorClass}`} />
-      
-      <CardContent className="p-5 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
-              {subject.name}
-            </h3>
-            {subject.code && (
-              <Badge variant="secondary" className="mt-1 font-mono text-xs">
-                {subject.code}
-              </Badge>
+    <a href={`/campus/materia/${subject.id}`}>
+      <Card className="group relative overflow-hidden border-0 bg-white/70 backdrop-blur hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+        {/* Top color bar */}
+        <div className={`h-2 bg-gradient-to-r ${colorClass}`} />
+        
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
+                {subject.name}
+              </h3>
+              {subject.code && (
+                <Badge variant="secondary" className="mt-1 font-mono text-xs">
+                  {subject.code}
+                </Badge>
+              )}
+            </div>
+            <div
+              className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg`}
+            >
+              <BookOpen className="w-5 h-5 text-white" />
+            </div>
+          </div>
+
+          {subject.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {subject.description}
+            </p>
+          )}
+
+          <div className="pt-3 border-t space-y-2">
+            {subject.teacher ? (
+              <div className="flex items-center gap-2">
+                <Avatar className="h-7 w-7 border border-slate-200">
+                  <AvatarFallback className="text-xs bg-slate-100">
+                    {getInitials(subject.teacher.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-700 truncate">
+                    {subject.teacher.name}
+                  </p>
+                  {subject.teacher.email && (
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                      <Mail className="w-3 h-3" />
+                      {subject.teacher.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <User className="w-4 h-4" />
+                <span className="text-sm">Sin profesor asignado</span>
+              </div>
+            )}
+
+            {subject.schedule && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm">{subject.schedule}</span>
+              </div>
             )}
           </div>
-          <div
-            className={`flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg`}
-          >
-            <BookOpen className="w-5 h-5 text-white" />
-          </div>
-        </div>
-
-        {subject.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {subject.description}
-          </p>
-        )}
-
-        <div className="pt-3 border-t space-y-2">
-          {subject.teacher ? (
-            <div className="flex items-center gap-2">
-              <Avatar className="h-7 w-7 border border-slate-200">
-                <AvatarFallback className="text-xs bg-slate-100">
-                  {getInitials(subject.teacher.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-700 truncate">
-                  {subject.teacher.name}
-                </p>
-                {subject.teacher.email && (
-                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                    <Mail className="w-3 h-3" />
-                    {subject.teacher.email}
-                  </p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <User className="w-4 h-4" />
-              <span className="text-sm">Sin profesor asignado</span>
-            </div>
-          )}
-
-          {subject.schedule && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm">{subject.schedule}</span>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </a>
   );
 }
 
