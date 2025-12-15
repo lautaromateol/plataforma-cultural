@@ -103,6 +103,7 @@ const app = new Hono()
       // Obtener lista de cursos
       const courses = subject.courseSubjects.map((cs) => ({
         id: cs.course.id,
+        courseSubjectId: cs.id, // Incluir el ID del CourseSubject
         name: cs.course.name,
         classroom: cs.course.classroom,
         schedule: cs.schedule,
