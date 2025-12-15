@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useLogout } from "@/features/auth/api/use-logout";
 import { UserRole } from "@/src/generated/prisma/enums";
+import { NotificationsDropdown } from "@/features/notification/components/notifications-dropdown";
 import {
   GraduationCap,
   LogOut,
@@ -96,8 +97,11 @@ export function CampusHeader({ user }: CampusHeaderProps) {
             </div>
           </div>
 
-          {/* User Menu */}
-          <DropdownMenu>
+          {/* Notifications & User Menu */}
+          <div className="flex items-center gap-2">
+            <NotificationsDropdown userRole={user.role} />
+            
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -145,6 +149,7 @@ export function CampusHeader({ user }: CampusHeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
       </div>
     </header>
