@@ -12,6 +12,8 @@ import campus from "@/features/campus/server/route";
 import subjectResource from "@/features/subject-resource/server/route";
 import subjectInfo from "@/features/subject-resource/server/subject-route";
 import quiz from "@/features/quiz/server/route";
+import assignment from "@/features/assignment/server/route";
+import notification from "@/features/notification/server/route";
 import "./types.ts";
 
 const app = new Hono().basePath("/api")
@@ -21,6 +23,8 @@ const app = new Hono().basePath("/api")
   .route("/subject-resource", subjectResource)
   .route("/subject-info", subjectInfo)
   .route("/quiz", quiz)
+  .route("/assignment", assignment)
+  .route("/notification", notification)
   .route("/admin/academic-year", year)
   .route("/admin/subject", subject)
   .route("/admin/course", course)

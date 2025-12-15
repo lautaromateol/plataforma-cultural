@@ -1,4 +1,5 @@
 import { Hono } from "hono"
+import { format } from "date-fns"
 import { zValidator } from "@hono/zod-validator"
 import auth from "@/lib/middlewares/auth-middleware"
 import {
@@ -10,6 +11,7 @@ import {
   correctAnswerSchema,
   correctAttemptSchema,
 } from "../schemas"
+import { createNotifications } from "@/features/notification/api/create-notification"
 
 const app = new Hono()
   .use("*", auth)
@@ -267,6 +269,25 @@ const app = new Hono()
                 email: true,
               },
             },
+            subject: {
+              include: {
+                courseSubjects: {
+                  where: user.role === "TEACHER" ? { teacherId: user.sub } : undefined,
+                  include: {
+                    course: {
+                      include: {
+                        enrollments: {
+                          where: { status: "ACTIVE" },
+                          select: {
+                            studentId: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
             questions: {
               include: {
                 options: {
@@ -277,6 +298,40 @@ const app = new Hono()
             },
           },
         })
+
+        // Emitir notificaciones a todos los estudiantes de los cursos con esta materia
+        try {
+          const notificationsToCreate: Array<{
+            courseSubjectId: string;
+            studentIds: string[];
+          }> = [];
+
+          quiz.subject.courseSubjects.forEach((cs) => {
+            const studentIds = cs.course.enrollments.map((e) => e.studentId);
+            if (studentIds.length > 0) {
+              notificationsToCreate.push({
+                courseSubjectId: cs.id,
+                studentIds,
+              });
+            }
+          });
+
+          // Crear notificaciones para cada curso-materia
+          for (const notif of notificationsToCreate) {
+            await createNotifications({
+              prisma,
+              type: "QUIZ",
+              title: `Nuevo Cuestionario: ${quiz.title}`,
+              message: `El profesor ha habilitado un nuevo cuestionario. Fecha de cierre: ${format(new Date(quiz.endDate), "PPp")}`,
+              relatedId: quiz.id,
+              courseSubjectId: notif.courseSubjectId,
+              studentIds: notif.studentIds,
+            });
+          }
+        } catch (notificationError) {
+          console.error("Error al crear notificaciones:", notificationError);
+          // No fallar la creación del quiz si falla la notificación
+        }
 
         return c.json(
           { message: "Cuestionario creado exitosamente", quiz },
