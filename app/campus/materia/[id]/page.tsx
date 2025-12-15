@@ -33,6 +33,7 @@ import { useState } from "react";
 import { UploadResourceDialog } from "../components/upload-resource-dialog";
 import { useDeleteResource } from "@/features/subject-resource/api/use-delete-resource";
 import { QuizList } from "@/features/quiz/components/quiz-list";
+import { AssignmentList } from "@/features/assignment/components/assignment-list";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +54,7 @@ type Teacher = {
 
 type Course = {
   id: string;
+  courseSubjectId?: string;
   name: string;
   classroom: string | null;
   schedule: string | null;
@@ -264,42 +266,37 @@ export default function SubjectPage() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column - Teachers & Courses */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Teachers & Courses Cards in Header */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
             {/* Teachers Card */}
             {teachers.length > 0 && (
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-100">
+              <div className="bg-white/20 backdrop-blur-sm rounded-3xl shadow-lg border border-white/20 overflow-hidden flex flex-col h-80">
+                <div className="px-6 py-5 border-b border-white/20 flex-shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl ${colors.light}`}>
-                      <GraduationCap className={`w-5 h-5 ${colors.text}`} />
+                    <div className="p-2.5 rounded-xl bg-white/20">
+                      <GraduationCap className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="text-lg font-semibold text-slate-900">
+                    <h2 className="text-lg font-semibold text-white">
                       Profesores
                     </h2>
                   </div>
                 </div>
-                <div className="p-4 space-y-3">
+                <div className="p-4 space-y-3 overflow-y-auto flex-1">
                   {teachers.map((teacher: Teacher) => (
                     <div
                       key={teacher.id}
-                      className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors"
+                      className="flex items-center gap-4 p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors"
                     >
-                      <Avatar className="h-12 w-12 ring-2 ring-white shadow-md">
-                        <AvatarFallback className={`${colors.light} ${colors.text} font-semibold`}>
+                      <Avatar className="h-12 w-12 ring-2 ring-white/30 shadow-md">
+                        <AvatarFallback className="bg-white/20 text-white font-semibold">
                           {getInitials(teacher.name)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-900">{teacher.name}</p>
+                        <p className="font-medium text-white">{teacher.name}</p>
                         {teacher.email && (
-                          <p className="text-sm text-slate-500 truncate flex items-center gap-1.5">
+                          <p className="text-sm text-white/80 truncate flex items-center gap-1.5">
                             <Mail className="w-3.5 h-3.5" />
                             {teacher.email}
                           </p>
@@ -313,47 +310,47 @@ export default function SubjectPage() {
 
             {/* Courses Card */}
             {courses.length > 0 && (
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-100">
+              <div className="bg-white/20 backdrop-blur-sm rounded-3xl shadow-lg border border-white/20 overflow-hidden flex flex-col h-80">
+                <div className="px-6 py-5 border-b border-white/20 flex-shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl ${colors.light}`}>
-                      <Users className={`w-5 h-5 ${colors.text}`} />
+                    <div className="p-2.5 rounded-xl bg-white/20">
+                      <Users className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="text-lg font-semibold text-slate-900">
+                    <h2 className="text-lg font-semibold text-white">
                       Cursos
                     </h2>
                   </div>
                 </div>
-                <div className="p-4 space-y-3">
+                <div className="p-4 space-y-3 overflow-y-auto flex-1">
                   {courses.map((course: Course) => (
                     <div
                       key={course.id}
-                      className={`p-4 rounded-2xl border ${colors.border} ${colors.light} transition-all hover:shadow-md`}
+                      className="p-4 rounded-2xl bg-white/10 hover:bg-white/20 transition-all border border-white/20"
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-slate-900">
+                        <h4 className="font-semibold text-white">
                           {course.name}
                         </h4>
-                        <Badge variant="secondary" className="font-medium">
+                        <Badge className="bg-white/20 text-white border-0 font-medium">
                           {course.studentsCount} alumnos
                         </Badge>
                       </div>
-                      <div className="space-y-1.5 text-sm text-slate-600">
+                      <div className="space-y-1.5 text-sm text-white/80">
                         {course.classroom && (
                           <p className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-slate-400" />
+                            <MapPin className="w-4 h-4 text-white/60" />
                             {course.classroom}
                           </p>
                         )}
                         {course.schedule && (
                           <p className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-slate-400" />
+                            <Clock className="w-4 h-4 text-white/60" />
                             {course.schedule}
                           </p>
                         )}
                         {course.teacher && (
                           <p className="flex items-center gap-2">
-                            <GraduationCap className="w-4 h-4 text-slate-400" />
+                            <GraduationCap className="w-4 h-4 text-white/60" />
                             {course.teacher.name}
                           </p>
                         )}
@@ -364,9 +361,12 @@ export default function SubjectPage() {
               </div>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Right Column - Resources and Quizzes */}
-          <div className="lg:col-span-2 space-y-6">
+      {/* Main Content - Resources, Assignments and Quizzes (Full Width) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="space-y-6">
             {/* Resources Section */}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
               {/* Resources Header */}
@@ -496,6 +496,30 @@ export default function SubjectPage() {
               </div>
             </div>
 
+            {/* Assignments Section */}
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl ${colors.light}`}>
+                    <Upload className={`w-5 h-5 ${colors.text}`} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Entregas
+                    </h2>
+                    <p className="text-sm text-slate-500">
+                      {permissions.canEdit
+                        ? "Gestiona las entregas de los estudiantes"
+                        : "Sube tus trabajos y revisa tus calificaciones"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                <AssignmentList subjectId={subjectId} />
+              </div>
+            </div>
+
             {/* Quizzes Section */}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
               <div className="px-6 py-5 border-b border-slate-100">
@@ -517,7 +541,6 @@ export default function SubjectPage() {
                 <QuizList subjectId={subjectId} />
               </div>
             </div>
-          </div>
         </div>
       </div>
 
@@ -577,19 +600,19 @@ function SubjectLoadingSkeleton() {
               <Skeleton className="h-24 w-28 rounded-2xl bg-white/20" />
             </div>
           </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+            <Skeleton className="h-64 rounded-3xl bg-white/20" />
+            <Skeleton className="h-64 rounded-3xl bg-white/20" />
+          </div>
         </div>
       </div>
 
       {/* Content Skeleton */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-6">
-            <Skeleton className="h-64 rounded-3xl" />
-            <Skeleton className="h-80 rounded-3xl" />
-          </div>
-          <div className="lg:col-span-2">
-            <Skeleton className="h-[600px] rounded-3xl" />
-          </div>
+        <div className="space-y-6">
+          <Skeleton className="h-[400px] rounded-3xl" />
+          <Skeleton className="h-[400px] rounded-3xl" />
+          <Skeleton className="h-[400px] rounded-3xl" />
         </div>
       </div>
     </div>
