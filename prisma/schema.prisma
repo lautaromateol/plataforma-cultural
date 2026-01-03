@@ -1,0 +1,419 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String   @id @default(cuid())
+  dni               String   @unique
+  email             String?  @unique
+  password          String
+  name              String
+  verificationToken String?  @unique
+  role              UserRole @default(STUDENT)
+  isVerified        Boolean  @default(false)
+  firstLogin        Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relaciones
+  studentProfile    StudentProfile?
+  teacherProfile    TeacherProfile?
+  enrollments       Enrollment[]
+  courseSubjects    CourseSubject[]
+  uploadedResources SubjectResource[]
+  createdQuizzes    Quiz[]
+  quizAttempts      QuizAttempt[]
+  createdAssignments Assignment[]
+  assignmentSubmissions AssignmentSubmission[]
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+// Año escolar (1ro, 2do, 3ro, etc.)
+model Year {
+  id          String   @id @default(cuid())
+  level       Int      @unique // 1, 2, 3, 4, 5, 6
+  name        String   @unique // "Primer Año", "Segundo Año", etc.
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  subjects Subject[]
+  courses  Course[]
+
+  @@map("years")
+}
+
+// Materia (Matemática, Lengua, etc.)
+model Subject {
+  id          String   @id @default(cuid())
+  name        String // "Matemática", "Lengua"
+  code        String? // "MAT-1", "LEN-1"
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  yearId         String
+  year           Year              @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  courseSubjects CourseSubject[]
+  resources      SubjectResource[]
+  quizzes        Quiz[]
+
+  @@unique([yearId, name])
+  @@map("subjects")
+}
+
+// CURSO = Grupo de estudiantes (1°A, 1°B, 2°A, etc.)
+model Course {
+  id           String   @id @default(cuid())
+  name         String // "1°A", "1°B", "2°A", etc.
+  academicYear String // "2024" - año lectivo
+  capacity     Int      @default(30)
+  classroom    String? // "Aula 101"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  yearId         String
+  year           Year            @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  courseSubjects CourseSubject[]
+  enrollments    Enrollment[]
+
+  @@unique([name, academicYear])
+  @@map("courses")
+}
+
+// Relación muchos-a-muchos: Curso - Materia - Profesor
+model CourseSubject {
+  id        String   @id @default(cuid())
+  schedule  String? // "Lunes 8:00-10:00"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  teacherId String?
+  teacher   User?   @relation(fields: [teacherId], references: [id])
+
+  assignmentCourseSubjects AssignmentCourseSubject[]
+
+  @@unique([courseId, subjectId])
+  @@map("course_subjects")
+}
+
+// Matrícula: Estudiante en un CURSO
+model Enrollment {
+  id        String           @id @default(cuid())
+  status    EnrollmentStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  // Relaciones
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@map("enrollments")
+}
+
+model StudentProfile {
+  id            String    @id @default(cuid())
+  birthDate     DateTime?
+  address       String?
+  phone         String?
+  guardianName  String?
+  guardianPhone String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relaciones
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("student_profiles")
+}
+
+model TeacherProfile {
+  id             String    @id @default(cuid())
+  specialization String?
+  hireDate       DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relaciones
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("teacher_profiles")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  TRANSFERRED
+}
+
+// Recursos de una materia (archivos, videos, etc.)
+model SubjectResource {
+  id          String   @id @default(cuid())
+  title       String // Título del recurso
+  description String? // Descripción opcional
+  fileName    String // Nombre del archivo original
+  fileUrl     String // URL del archivo (puede ser local o cloud storage)
+  fileType    String // MIME type del archivo
+  fileSize    Int // Tamaño en bytes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@map("subject_resources")
+}
+
+// Cuestionario
+model Quiz {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  timeLimit    Int // Tiempo límite en minutos
+  startDate    DateTime // Fecha y hora de inicio
+  endDate      DateTime // Fecha y hora de cierre
+  allowReview  Boolean  @default(false) // Si los alumnos pueden ver la revisión
+  allowRetries Boolean  @default(false) // Si se permiten reintentos
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  questions Question[]
+  attempts  QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+// Pregunta del cuestionario
+model Question {
+  id                String       @id @default(cuid())
+  statement         String // Enunciado de la pregunta
+  type              QuestionType
+  hasAutoCorrection Boolean      @default(false) // Si tiene corrección automática
+  correctTextAnswer String? // Respuesta correcta esperada (para tipo TEXT con corrección automática)
+  points            Int          @default(1) // Puntos de la pregunta
+  order             Int // Orden de la pregunta en el cuestionario
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  // Relaciones
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  options Option[]
+  answers Answer[]
+
+  @@map("questions")
+}
+
+// Opción de respuesta (para multiple choice)
+model Option {
+  id        String   @id @default(cuid())
+  text      String // Texto de la opción
+  isCorrect Boolean  @default(false) // Si es la respuesta correcta
+  order     Int // Orden de la opción
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  answerOptions AnswerOption[]
+
+  @@map("options")
+}
+
+// Intento del alumno
+model QuizAttempt {
+  id            String    @id @default(cuid())
+  startedAt     DateTime  @default(now()) // Hora de inicio
+  submittedAt   DateTime? // Hora de envío
+  timeRemaining Int? // Tiempo restante en segundos al momento del envío
+  score         Float? // Puntaje total (null si no está corregido)
+  isSubmitted   Boolean   @default(false) // Si ya fue enviado
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relaciones
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  answers Answer[]
+
+  @@unique([quizId, studentId, startedAt])
+  @@map("quiz_attempts")
+}
+
+// Respuesta del alumno a una pregunta
+model Answer {
+  id                String   @id @default(cuid())
+  textAnswer        String? // Para respuesta abierta
+  isCorrect         Boolean? // Si la respuesta es correcta (null si no está corregida)
+  points            Float? // Puntos obtenidos (null si no está corregida)
+  needsManualReview Boolean  @default(false) // Si necesita corrección manual
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relaciones
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  attemptId String
+  attempt   QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  selectedOptions AnswerOption[] // Opciones seleccionadas (para multiple choice)
+
+  @@unique([questionId, attemptId])
+  @@map("answers")
+}
+
+// Relación muchos-a-muchos: Answer - Option (para multiple choice con varias opciones)
+model AnswerOption {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Relaciones
+  answerId String
+  answer   Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  optionId String
+  option   Option @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([answerId, optionId])
+  @@map("answer_options")
+}
+
+enum QuestionType {
+  TEXT // Respuesta abierta
+  SINGLE_CHOICE // Multiple choice con una respuesta correcta
+  MULTIPLE_CHOICE // Multiple choice con varias respuestas correctas
+}
+
+// Entrega creada por el profesor
+model Assignment {
+  id          String   @id @default(cuid())
+  title       String // Título de la entrega
+  description String? // Descripción opcional
+  dueDate    DateTime // Fecha de entrega
+  hasGrade   Boolean  @default(true) // Si tiene calificación o no
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relaciones
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  assignmentCourseSubjects AssignmentCourseSubject[]
+  submissions AssignmentSubmission[]
+
+  @@map("assignments")
+}
+
+// Relación muchos-a-muchos: Assignment - CourseSubject
+model AssignmentCourseSubject {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Relaciones
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  courseSubjectId String
+  courseSubject   CourseSubject @relation(fields: [courseSubjectId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, courseSubjectId])
+  @@map("assignment_course_subjects")
+}
+
+// Entrega del estudiante
+model AssignmentSubmission {
+  id          String    @id @default(cuid())
+  fileName    String // Nombre del archivo original
+  fileUrl     String // URL del archivo
+  fileType    String // MIME type del archivo
+  fileSize    Int // Tamaño en bytes
+  grade       Float? // Calificación (null si no está calificada o si la entrega no tiene calificación)
+  feedback    String? // Comentarios del profesor
+  submittedAt DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relaciones
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@map("assignment_submissions")
+}
+
+// Notificación para estudiantes
+model Notification {
+  id          String          @id @default(cuid())
+  type        NotificationType // QUIZ o ASSIGNMENT
+  title       String // Título de la notificación
+  message     String // Mensaje descriptivo
+  relatedId   String // ID del Quiz o Assignment relacionado
+  courseSubjectId String // ID del CourseSubject para navegación
+  isRead      Boolean         @default(false)
+  expiresAt   DateTime // Fecha de expiración (72 horas después de creada)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relaciones
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  QUIZ
+  ASSIGNMENT
+}
