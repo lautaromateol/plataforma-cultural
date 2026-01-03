@@ -15,7 +15,7 @@ type UseGetSubjectsParams = {
   yearId?: string;
 };
 
-export function useGetSubjects(params: UseGetSubjectsParams) {
+export function useGetSubjects(params?: UseGetSubjectsParams) {
   const query = useQuery<Subject[], Error>({
     queryKey: ["subjects", params?.yearId],
     queryFn: async () => {
