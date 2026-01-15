@@ -26,7 +26,7 @@ const auth = async (c: Context, next: Next) => {
   }
 
   try {
-    const payload = await verify(token, process.env.JWT_SECRET!);
+    const payload = await verify(token, process.env.JWT_SECRET!, "HS256");
     // Verificar que el payload tenga las propiedades necesarias
     if (
       typeof payload === "object" &&

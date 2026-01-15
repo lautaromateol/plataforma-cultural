@@ -95,7 +95,7 @@ const app = new Hono()
         exp: Math.floor(Date.now() / 1000) + 60 * 60,
       };
 
-      const token = await sign(payload, process.env.JWT_SECRET!);
+      const token = await sign(payload, process.env.JWT_SECRET!, "HS256");
 
       setCookie(c, "token", token, {
         httpOnly: true,

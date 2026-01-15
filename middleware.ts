@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      const decoded = await verify(token, process.env.JWT_SECRET!);
+      const decoded = await verify(token, process.env.JWT_SECRET!, "HS256");
       if (decoded.role !== "ADMIN") {
         return NextResponse.redirect(new URL("/login", request.url));
       }
