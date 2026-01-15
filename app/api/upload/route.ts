@@ -1,10 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { put } from "@vercel/blob";
+import { verify } from "hono/jwt";
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const token = request.cookies.get("token")?.value;
+    if (!token) {
+      return NextResponse.json(
+        { error: "No autorizado" },
+        { status: 401 }
+      );
+    }
+
+    const decoded = await verify(token, process.env.JWT_SECRET!, "HS256");
+    if (!decoded) {
+      return NextResponse.json(
+        { error: "Token inválido" },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
@@ -15,8 +41,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar tamaño del archivo (max 50MB)
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: "El archivo es demasiado grande. Máximo 50MB" },
@@ -24,31 +49,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Crear directorio de uploads si no existe
-    const uploadsDir = join(process.cwd(), "public", "uploads");
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
-    // Generar nombre único para el archivo
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const fileExtension = file.name.split(".").pop();
-    const uniqueFileName = `${timestamp}-${randomString}.${fileExtension}`;
-
-    // Convertir el archivo a buffer y guardarlo
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filePath = join(uploadsDir, uniqueFileName);
-    await writeFile(filePath, buffer);
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(7);
+    const blobPath = `escuela/uploads/${timestamp}-${randomString}-${file.name}`;
 
-    // Retornar la URL pública del archivo
-    const fileUrl = `/uploads/${uniqueFileName}`;
+    const blob = await put(blobPath, new Blob([bytes], { type: file.type }), {
+      access: "public",
+    });
 
     return NextResponse.json(
       {
         success: true,
-        fileUrl,
+        fileUrl: blob.url,
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
@@ -57,8 +70,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error al subir archivo:", error);
+    const errorMessage = error instanceof Error ? error.message : "Error desconocido al subir el archivo";
     return NextResponse.json(
-      { error: "Error al subir el archivo" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
