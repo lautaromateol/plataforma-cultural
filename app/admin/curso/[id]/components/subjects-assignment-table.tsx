@@ -26,13 +26,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  AssignTeacherDialog,
-} from "@/features/course-subject/components/assign-teacher-dialog";
-import type { SubjectInfo } from "@/features/course-subject/components/assign-teacher-form";
+import { AssignTeacherDialog } from "@/features/course-subject/components/assign-teacher-dialog";
+import type { CourseSubject } from "@/features/course-subject/api/use-get-course-subjects";
 
 // Tipo compatible para la tabla
-type SubjectTableData = SubjectInfo;
 import {
   UserPlus,
   Pencil,
@@ -44,19 +41,19 @@ import {
 } from "lucide-react";
 
 interface SubjectsAssignmentTableProps {
-  data: SubjectInfo[] | SubjectTableData[];
+  data: CourseSubject[];
   courseId: string;
 }
 
 // Columnas de la tabla definidas fuera del componente para evitar recreación
 const createColumns = (
-  onAssign: (subject: SubjectInfo) => void
-): ColumnDef<SubjectInfo>[] => [
+  onAssign: (courseSubject: CourseSubject) => void
+): ColumnDef<CourseSubject>[] => [
   {
     accessorKey: "name",
     header: "Materia",
     cell: ({ row }) => {
-      const subject = row.original;
+      const subject = row.original.subject;
       return (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
@@ -195,20 +192,20 @@ export function SubjectsAssignmentTable({
   courseId,
 }: SubjectsAssignmentTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState<SubjectInfo | null>(
+  const [courseSubject, setCourseSubject] = useState<CourseSubject | null>(
     null
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleOpenAssignDialog = (subject: SubjectInfo) => {
-    setSelectedSubject(subject);
+  const handleOpenAssignDialog = (courseSubject: CourseSubject) => {
+    setCourseSubject(courseSubject);
     setIsDialogOpen(true);
   };
 
   const handleDialogChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      setSelectedSubject(null);
+      setCourseSubject(null);
     }
   };
 
@@ -307,14 +304,21 @@ export function SubjectsAssignmentTable({
           </TableBody>
         </Table>
       </div>
-
-      {/* Assignment Dialog */}
-      <AssignTeacherDialog
-        open={isDialogOpen}
-        onOpenChange={handleDialogChange}
-        subject={selectedSubject}
-        courseId={courseId}
-      />
+      {courseSubject && (
+        <AssignTeacherDialog
+          open={isDialogOpen}
+          onOpenChange={handleDialogChange}
+          subject={{
+            code: courseSubject.subject.code,
+            courseSubjectId: courseSubject.id,
+            name: courseSubject.subject.name,
+            schedule: courseSubject.schedule,
+            id: courseSubject.subject.id,
+            teacher: courseSubject.teacher,
+          }}
+          courseId={courseId}
+        />
+      )}
     </div>
   );
 }
