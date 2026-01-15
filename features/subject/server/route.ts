@@ -94,12 +94,29 @@ const app = new Hono()
       }
 
       try {
+        // Crear la materia
         const subject = await prisma.subject.create({
           data: {
             ...data,
             yearId,
           },
         });
+
+        // Obtener todos los cursos del año
+        const courses = await prisma.course.findMany({
+          where: { yearId },
+        });
+
+        // Crear CourseSubject para cada curso del año
+        if (courses.length > 0) {
+          await prisma.courseSubject.createMany({
+            data: courses.map((course) => ({
+              courseId: course.id,
+              subjectId: subject.id,
+            })),
+            skipDuplicates: true,
+          });
+        }
 
         return c.json({ message: "Materia creada exitosamente", subject }, 201);
       } catch (error) {

@@ -38,8 +38,10 @@ export function useCreateSubject() {
       const successData = jsonData as unknown as SuccessResponse;
       return successData;
     },
-    onSuccess: () => {
+    onSuccess: (_, { yearId }) => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
+      queryClient.invalidateQueries({ queryKey: ["subjects", yearId] });
+      queryClient.invalidateQueries({ queryKey: ["course-subjects"] });
       queryClient.invalidateQueries({ queryKey: ["course"] });
     },
   });
