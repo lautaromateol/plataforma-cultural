@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -11,14 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -39,14 +28,6 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const formSchema = z.object({
-  title: z.string().min(1, "El título es requerido"),
-  description: z.string().optional(),
-  file: z.any().refine((file) => file instanceof File, "Debes seleccionar un archivo"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 interface UploadResourceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -59,18 +40,12 @@ export function UploadResourceDialog({
   subjectId,
 }: UploadResourceDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const { createResource, isCreatingResource } = useCreateResource();
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-    },
-  });
+  const { createResourceAsync, isCreatingResource } = useCreateResource();
 
   const getFileIcon = (fileType: string) => {
     if (fileType.includes("pdf")) return <FileText className="w-8 h-8" />;
@@ -93,7 +68,6 @@ export function UploadResourceDialog({
   };
 
   const handleFileSelect = (file: File) => {
-    // Validar tamaño del archivo (max 50MB)
     const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error("El archivo es demasiado grande. Máximo 50MB");
@@ -101,12 +75,9 @@ export function UploadResourceDialog({
     }
 
     setSelectedFile(file);
-    form.setValue("file", file);
-    // Auto-rellenar el título con el nombre del archivo si está vacío
-    if (!form.getValues("title")) {
-      // Remover extensión del nombre
+    if (!title) {
       const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
-      form.setValue("title", nameWithoutExt);
+      setTitle(nameWithoutExt);
     }
   };
 
@@ -138,13 +109,19 @@ export function UploadResourceDialog({
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
-    form.setValue("file", null);
     setUploadProgress(0);
   };
 
-  const onSubmit = async (values: FormValues) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (!selectedFile) {
       toast.error("Debes seleccionar un archivo");
+      return;
+    }
+
+    if (!title.trim()) {
+      toast.error("El título es requerido");
       return;
     }
 
@@ -152,7 +129,6 @@ export function UploadResourceDialog({
     setUploadProgress(0);
 
     try {
-      // Simular progreso de subida
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
@@ -163,7 +139,6 @@ export function UploadResourceDialog({
         });
       }, 200);
 
-      // Subir el archivo al servidor
       const formData = new FormData();
       formData.append("file", selectedFile);
 
@@ -173,7 +148,6 @@ export function UploadResourceDialog({
       });
 
       clearInterval(progressInterval);
-      setUploadProgress(100);
 
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json();
@@ -181,31 +155,24 @@ export function UploadResourceDialog({
       }
 
       const { fileUrl, fileType, fileSize } = await uploadResponse.json();
+      setUploadProgress(100);
 
-      // Crear el recurso en la base de datos con la URL permanente
-      createResource(
-        {
-          title: values.title,
-          description: values.description || undefined,
-          subjectId,
-          fileName: selectedFile.name,
-          fileUrl: fileUrl,
-          fileType: fileType || selectedFile.type,
-          fileSize: fileSize || selectedFile.size,
-        },
-        {
-          onSuccess: () => {
-            toast.success("¡Recurso subido exitosamente!");
-            form.reset();
-            setSelectedFile(null);
-            setUploadProgress(0);
-            onOpenChange(false);
-          },
-          onError: (error) => {
-            toast.error(error.message || "Error al crear el recurso");
-          },
-        }
-      );
+      await createResourceAsync({
+        title,
+        description: description || undefined,
+        subjectId,
+        fileName: selectedFile.name,
+        fileUrl: fileUrl,
+        fileType: fileType || selectedFile.type,
+        fileSize: fileSize || selectedFile.size,
+      });
+
+      setTitle("");
+      setDescription("");
+      setSelectedFile(null);
+      setUploadProgress(0);
+      onOpenChange(false);
+      toast.success("Recurso subido exitosamente");
     } catch (error) {
       console.error("Error al subir archivo:", error);
       toast.error(error instanceof Error ? error.message : "Error al subir el archivo");
@@ -228,7 +195,8 @@ export function UploadResourceDialog({
       if (!isLoading) {
         onOpenChange(open);
         if (!open) {
-          form.reset();
+          setTitle("");
+          setDescription("");
           setSelectedFile(null);
           setUploadProgress(0);
         }
@@ -249,162 +217,134 @@ export function UploadResourceDialog({
           </div>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
             {/* File Drop Zone */}
-            <FormField
-              control={form.control}
-              name="file"
-              render={() => (
-                <FormItem>
-                  <FormControl>
-                    <div className="space-y-3">
-                      {!selectedFile ? (
-                        <div
-                          onDragOver={handleDragOver}
-                          onDragLeave={handleDragLeave}
-                          onDrop={handleDrop}
-                          className={cn(
-                            "relative border-2 border-dashed rounded-2xl p-10 text-center transition-all duration-300 cursor-pointer",
-                            isDragging 
-                              ? "border-blue-500 bg-blue-50 scale-[1.02]" 
-                              : "border-slate-200 hover:border-blue-400 hover:bg-slate-50"
-                          )}
-                        >
-                          <input
-                            id="file-upload"
-                            type="file"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            onChange={handleFileChange}
-                            accept="*/*"
-                          />
-                          <div className="space-y-4">
-                            <div className={cn(
-                              "w-16 h-16 rounded-2xl mx-auto flex items-center justify-center transition-colors",
-                              isDragging ? "bg-blue-100" : "bg-slate-100"
-                            )}>
-                              <Upload className={cn(
-                                "w-8 h-8 transition-colors",
-                                isDragging ? "text-blue-500" : "text-slate-400"
-                              )} />
-                            </div>
-                            <div>
-                              <p className="text-slate-900 font-medium">
-                                Arrastra un archivo aquí
-                              </p>
-                              <p className="text-slate-500 text-sm mt-1">
-                                o <span className="text-blue-600 font-medium">selecciona</span> uno de tu dispositivo
-                              </p>
-                            </div>
-                            <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
-                              <span className="px-2 py-1 bg-slate-100 rounded-full">PDF</span>
-                              <span className="px-2 py-1 bg-slate-100 rounded-full">DOC</span>
-                              <span className="px-2 py-1 bg-slate-100 rounded-full">Video</span>
-                              <span className="px-2 py-1 bg-slate-100 rounded-full">+</span>
-                            </div>
-                            <p className="text-xs text-slate-400">
-                              Máximo 50MB
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className={cn(
-                          "relative p-5 border rounded-2xl transition-all",
-                          uploadProgress === 100 
-                            ? "border-green-200 bg-green-50" 
-                            : "border-slate-200 bg-slate-50"
-                        )}>
-                          <div className="flex items-center gap-4">
-                            <div className={cn(
-                              "flex-shrink-0 p-3 rounded-xl text-white shadow-lg bg-gradient-to-br",
-                              getFileColor(selectedFile.type)
-                            )}>
-                              {getFileIcon(selectedFile.type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-slate-900 truncate">
-                                {selectedFile.name}
-                              </p>
-                              <p className="text-sm text-slate-500">
-                                {formatFileSize(selectedFile.size)}
-                              </p>
-                              {isLoading && uploadProgress < 100 && (
-                                <div className="mt-2">
-                                  <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300"
-                                      style={{ width: `${uploadProgress}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                            {uploadProgress === 100 ? (
-                              <CheckCircle2 className="w-6 h-6 text-green-500" />
-                            ) : (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleRemoveFile}
-                                disabled={isLoading}
-                                className="rounded-full hover:bg-slate-200"
-                              >
-                                <X className="w-5 h-5 text-slate-500" />
-                              </Button>
-                            )}
+            <div className="space-y-3">
+              {!selectedFile ? (
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={cn(
+                    "relative border-2 border-dashed rounded-2xl p-10 text-center transition-all duration-300 cursor-pointer",
+                    isDragging 
+                      ? "border-blue-500 bg-blue-50 scale-[1.02]" 
+                      : "border-slate-200 hover:border-blue-400 hover:bg-slate-50"
+                  )}
+                >
+                  <input
+                    id="file-upload"
+                    type="file"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={handleFileChange}
+                    accept="*/*"
+                  />
+                  <div className="space-y-4">
+                    <div className={cn(
+                      "w-16 h-16 rounded-2xl mx-auto flex items-center justify-center transition-colors",
+                      isDragging ? "bg-blue-100" : "bg-slate-100"
+                    )}>
+                      <Upload className={cn(
+                        "w-8 h-8 transition-colors",
+                        isDragging ? "text-blue-500" : "text-slate-400"
+                      )} />
+                    </div>
+                    <div>
+                      <p className="text-slate-900 font-medium">
+                        Arrastra un archivo aquí
+                      </p>
+                      <p className="text-slate-500 text-sm mt-1">
+                        o <span className="text-blue-600 font-medium">selecciona</span> uno de tu dispositivo
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+                      <span className="px-2 py-1 bg-slate-100 rounded-full">PDF</span>
+                      <span className="px-2 py-1 bg-slate-100 rounded-full">DOC</span>
+                      <span className="px-2 py-1 bg-slate-100 rounded-full">Video</span>
+                      <span className="px-2 py-1 bg-slate-100 rounded-full">+</span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      Máximo 50MB
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className={cn(
+                  "relative p-5 border rounded-2xl transition-all",
+                  uploadProgress === 100 
+                    ? "border-green-200 bg-green-50" 
+                    : "border-slate-200 bg-slate-50"
+                )}>
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "flex-shrink-0 p-3 rounded-xl text-white shadow-lg bg-gradient-to-br",
+                      getFileColor(selectedFile.type)
+                    )}>
+                      {getFileIcon(selectedFile.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-900 truncate">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        {formatFileSize(selectedFile.size)}
+                      </p>
+                      {isLoading && uploadProgress < 100 && (
+                        <div className="mt-2">
+                          <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300"
+                              style={{ width: `${uploadProgress}%` }}
+                            />
                           </div>
                         </div>
                       )}
                     </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                    {uploadProgress === 100 ? (
+                      <CheckCircle2 className="w-6 h-6 text-green-500" />
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleRemoveFile}
+                        disabled={isLoading}
+                        className="rounded-full hover:bg-slate-200"
+                      >
+                        <X className="w-5 h-5 text-slate-500" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
               )}
-            />
+            </div>
 
             {/* Title Field */}
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-slate-700 font-medium">Título del recurso</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ej: Guía de ejercicios - Unidad 1"
-                      className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-2">
+              <label className="text-slate-700 font-medium text-sm">Título del recurso</label>
+              <Input
+                placeholder="Ej: Guía de ejercicios - Unidad 1"
+                className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                disabled={isLoading}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
 
             {/* Description Field */}
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-slate-700 font-medium">
-                    Descripción <span className="text-slate-400 font-normal">(opcional)</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Describe brevemente el contenido del recurso..."
-                      rows={3}
-                      className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 resize-none"
-                      disabled={isLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-2">
+              <label className="text-slate-700 font-medium text-sm">
+                Descripción <span className="text-slate-400 font-normal">(opcional)</span>
+              </label>
+              <Textarea
+                placeholder="Describe brevemente el contenido del recurso..."
+                rows={3}
+                className="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 resize-none"
+                disabled={isLoading}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-2">
@@ -436,7 +376,6 @@ export function UploadResourceDialog({
               </Button>
             </div>
           </form>
-        </Form>
       </DialogContent>
     </Dialog>
   );
