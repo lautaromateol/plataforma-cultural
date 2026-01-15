@@ -30,7 +30,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useGetSubjectInfo } from "@/features/subject-resource/api/use-get-subject-info";
+import { useGetSubjectCourses } from "@/features/subject-resource/api/use-get-subject-courses";
 import { useGetUser } from "@/features/auth/api/use-get-user";
 
 type Assignment = {
@@ -78,12 +78,11 @@ export function AssignmentForm({
 }: AssignmentFormProps) {
   const isEdit = !!initialData;
   const { user } = useGetUser();
-  const { data: subjectData } = useGetSubjectInfo(subjectId);
+  const { data: courses = [] } = useGetSubjectCourses(subjectId);
 
   // Obtener cursos disponibles del profesor para esta materia
   const teacherCourses = React.useMemo(() => {
-    if (!subjectData || !user) return [];
-    const courses = subjectData.courses || [];
+    if (!courses || !user) return [];
     
     // Si es profesor, filtrar solo los cursos donde es profesor
     if (user.role === "TEACHER") {
@@ -92,7 +91,7 @@ export function AssignmentForm({
     
     // Si es admin, mostrar todos los cursos
     return courses;
-  }, [subjectData, user]);
+  }, [courses, user]);
 
   const form = useForm<AssignmentFormData>({
     resolver: zodResolver(createAssignmentSchema),
