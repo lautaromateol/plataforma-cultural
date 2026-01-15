@@ -7,3 +7,9 @@ export const createYearSchema = z.object({
 });
 
 export const updateYearSchema = createYearSchema.partial();
+export interface Year {
+  id: string;
+  level: number;
+  name: string;
+  description: string | null;
+}
