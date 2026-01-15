@@ -55,6 +55,7 @@ import {
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { useGetUser } from "@/features/auth/api/use-get-user";
+import { toast } from "sonner";
 
 interface AssignmentListProps {
   subjectId: string;
@@ -137,6 +138,22 @@ export function AssignmentList({ subjectId }: AssignmentListProps) {
 
   const isPastDue = (dueDate: string) => {
     return new Date(dueDate) < new Date();
+  };
+
+  const handleDownloadFile = async (fileUrl: string, fileName: string) => {
+    try {
+      // Crear un elemento temporal para descargar
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = fileName;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error al descargar archivo:", error);
+      toast.error("Error al descargar el archivo");
+    }
   };
 
   if (isLoading) {
@@ -244,15 +261,13 @@ export function AssignmentList({ subjectId }: AssignmentListProps) {
                                 >
                                   <div className="flex-1">
                                     <div className="font-medium">{submission.student.name}</div>
-                                    <a
-                                      href={submission.fileUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                                    <button
+                                      onClick={() => handleDownloadFile(submission.fileUrl, submission.fileName)}
+                                      className="text-xs text-blue-600 hover:underline flex items-center gap-1 bg-none border-none p-0 cursor-pointer"
                                     >
                                       <FileText className="h-3 w-3" />
                                       {submission.fileName}
-                                    </a>
+                                    </button>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     {submission.grade !== null && submission.grade !== undefined ? (

@@ -2,9 +2,6 @@
 
 import * as React from "react";
 import { useState, useCallback } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -12,14 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { useSubmitAssignment } from "../api/use-submit-assignment";
 import {
@@ -28,15 +17,15 @@ import {
   X,
   FileText,
   CheckCircle2,
+  Cloud,
+  FileImage,
+  FileVideo,
+  FileMusic,
+  FileArchive,
+  File,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-const formSchema = z.object({
-  file: z.any().refine((file) => file instanceof File, "Debes seleccionar un archivo"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 interface SubmitAssignmentDialogProps {
   open: boolean;
@@ -52,41 +41,80 @@ export function SubmitAssignmentDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      file: undefined,
-    },
-  });
+  const [isDragging, setIsDragging] = useState(false);
 
   const { submitAssignmentAsync, isSubmittingAssignment } = useSubmitAssignment();
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes("pdf")) return <FileText className="w-8 h-8" />;
+    if (fileType.includes("image")) return <FileImage className="w-8 h-8" />;
+    if (fileType.includes("video")) return <FileVideo className="w-8 h-8" />;
+    if (fileType.includes("audio")) return <FileMusic className="w-8 h-8" />;
+    if (fileType.includes("zip") || fileType.includes("rar")) return <FileArchive className="w-8 h-8" />;
+    return <File className="w-8 h-8" />;
+  };
+
+  const getFileColor = (fileType: string) => {
+    if (fileType.includes("pdf")) return "from-red-500 to-rose-600";
+    if (fileType.includes("image")) return "from-emerald-500 to-teal-600";
+    if (fileType.includes("video")) return "from-violet-500 to-purple-600";
+    if (fileType.includes("audio")) return "from-amber-500 to-orange-600";
+    if (fileType.includes("word") || fileType.includes("document")) return "from-blue-500 to-cyan-600";
+    if (fileType.includes("sheet") || fileType.includes("excel")) return "from-green-500 to-emerald-600";
+    if (fileType.includes("zip") || fileType.includes("rar")) return "from-slate-500 to-gray-600";
+    return "from-slate-400 to-gray-500";
+  };
+
+  const handleFileSelect = useCallback((file: File) => {
+    // Validar tamaño del archivo (max 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      toast.error("El archivo es demasiado grande. Máximo 50MB");
+      return;
+    }
+    setSelectedFile(file);
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validar tamaño del archivo (max 50MB)
-      const maxSize = 50 * 1024 * 1024; // 50MB
-      if (file.size > maxSize) {
-        toast.error("El archivo es demasiado grande. Máximo 50MB");
-        return;
-      }
-      setSelectedFile(file);
-      form.setValue("file", file);
+      handleFileSelect(file);
     }
-  }, [form]);
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  }, [handleFileSelect]);
 
   const removeFile = () => {
     setSelectedFile(null);
-    form.setValue("file", undefined);
+    setUploadProgress(0);
   };
 
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.split(".").pop()?.toLowerCase();
-    return <FileText className="h-8 w-8 text-blue-500" />;
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!selectedFile) {
       toast.error("Debes seleccionar un archivo");
       return;
@@ -107,7 +135,7 @@ export function SubmitAssignmentDialog({
         });
       }, 200);
 
-      // Subir el archivo al servidor
+      // Subir el archivo al servidor (que lo sube a Vercel Blob)
       const formData = new FormData();
       formData.append("file", selectedFile);
 
@@ -117,14 +145,15 @@ export function SubmitAssignmentDialog({
       });
 
       clearInterval(progressInterval);
-      setUploadProgress(100);
 
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json();
+        console.error("Error from upload endpoint:", errorData);
         throw new Error(errorData.error || "Error al subir el archivo");
       }
 
       const { fileUrl, fileType, fileSize } = await uploadResponse.json();
+      setUploadProgress(100);
 
       // Crear la entrega en la base de datos
       await submitAssignmentAsync({
@@ -135,8 +164,6 @@ export function SubmitAssignmentDialog({
         fileSize: fileSize || selectedFile.size,
       });
 
-      toast.success("¡Entrega subida exitosamente!");
-      form.reset();
       setSelectedFile(null);
       setUploadProgress(0);
       onOpenChange(false);
@@ -145,133 +172,182 @@ export function SubmitAssignmentDialog({
       toast.error(
         error instanceof Error ? error.message : "Error al subir la entrega"
       );
+      setUploadProgress(0);
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
     }
   };
 
+  const isLoading = isUploading || isSubmittingAssignment;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Subir Entrega</DialogTitle>
-          <DialogDescription>
-            Selecciona el archivo que deseas entregar
-          </DialogDescription>
+    <Dialog
+      open={open}
+      onOpenChange={(newOpen) => {
+        if (!isLoading) {
+          onOpenChange(newOpen);
+          if (!newOpen) {
+            setSelectedFile(null);
+            setUploadProgress(0);
+          }
+        }
+      }}
+    >
+      <DialogContent className="sm:max-w-[540px] rounded-3xl border-0 shadow-2xl">
+        <DialogHeader className="pb-2">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+              <Cloud className="w-6 h-6" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl">Entregar Tarea</DialogTitle>
+              <DialogDescription className="mt-0.5">
+                Sube tu archivo de forma segura
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="file"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Archivo *</FormLabel>
-                  <FormControl>
-                    <div className="space-y-4">
-                      {!selectedFile ? (
-                        <label
-                          htmlFor="file-upload"
-                          className={cn(
-                            "flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer",
-                            "hover:bg-accent transition-colors",
-                            isUploading && "opacity-50 cursor-not-allowed"
-                          )}
-                        >
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-10 h-10 mb-3 text-muted-foreground" />
-                            <p className="mb-2 text-sm text-muted-foreground">
-                              <span className="font-semibold">Click para subir</span> o arrastra y suelta
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              PDF, DOCX, TXT, etc. (MAX. 50MB)
-                            </p>
-                          </div>
-                          <input
-                            id="file-upload"
-                            type="file"
-                            className="hidden"
-                            disabled={isUploading}
-                            onChange={(e) => {
-                              handleFileSelect(e);
-                              field.onChange(e.target.files?.[0]);
-                            }}
-                          />
-                        </label>
-                      ) : (
-                        <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/50">
-                          <div className="flex-shrink-0">
-                            {getFileIcon(selectedFile.name)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {selectedFile.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                            </p>
-                          </div>
-                          {!isUploading && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={removeFile}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+
+        <form onSubmit={onSubmit} className="space-y-5">
+          {/* File Drop Zone */}
+          <div className="space-y-3">
+            {!selectedFile ? (
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                        className={cn(
+                    "relative border-2 border-dashed rounded-2xl p-10 text-center transition-all duration-300 cursor-pointer",
+                    isDragging
+                      ? "border-blue-500 bg-blue-50 scale-[1.02]"
+                      : "border-slate-200 hover:border-blue-400 hover:bg-slate-50"
+                  )}
+                >
+                  <input
+                    id="file-upload"
+                    type="file"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={handleFileChange}
+                    accept="*/*"
+                    disabled={isLoading}
+                  />
+                  <div className="space-y-4">
+                    <div
+                      className={cn(
+                        "w-16 h-16 rounded-2xl mx-auto flex items-center justify-center transition-colors",
+                        isDragging ? "bg-blue-100" : "bg-slate-100"
                       )}
-                      {isUploading && (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span>Subiendo archivo...</span>
-                            <span>{uploadProgress}%</span>
-                          </div>
-                          <div className="w-full bg-secondary rounded-full h-2">
+                    >
+                      <Upload
+                        className={cn(
+                          "w-8 h-8 transition-colors",
+                          isDragging ? "text-blue-500" : "text-slate-400"
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <p className="text-slate-900 font-medium">
+                        Arrastra un archivo aquí
+                      </p>
+                      <p className="text-slate-500 text-sm mt-1">
+                        o <span className="text-blue-600 font-medium">selecciona</span> uno de tu dispositivo
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+                      <span className="px-2 py-1 bg-slate-100 rounded-full">PDF</span>
+                      <span className="px-2 py-1 bg-slate-100 rounded-full">DOC</span>
+                      <span className="px-2 py-1 bg-slate-100 rounded-full">+</span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      Máximo 50MB
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className={cn(
+                    "relative p-5 border rounded-2xl transition-all",
+                    uploadProgress === 100
+                      ? "border-green-200 bg-green-50"
+                      : "border-slate-200 bg-slate-50"
+                  )}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={cn(
+                        "flex-shrink-0 p-3 rounded-xl text-white shadow-lg bg-gradient-to-br",
+                        getFileColor(selectedFile.type)
+                      )}
+                    >
+                      {getFileIcon(selectedFile.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-900 truncate">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        {formatFileSize(selectedFile.size)}
+                      </p>
+                      {isLoading && uploadProgress < 100 && (
+                        <div className="mt-2">
+                          <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                             <div
-                              className="bg-primary h-2 rounded-full transition-all duration-300"
+                              className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300"
                               style={{ width: `${uploadProgress}%` }}
                             />
                           </div>
                         </div>
                       )}
                     </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                    {uploadProgress === 100 ? (
+                      <CheckCircle2 className="w-6 h-6 text-green-500" />
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={removeFile}
+                        disabled={isLoading}
+                        className="rounded-full hover:bg-slate-200"
+                      >
+                        <X className="w-5 h-5 text-slate-500" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
               )}
-            />
-            <div className="flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isUploading || isSubmittingAssignment}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={!selectedFile || isUploading || isSubmittingAssignment}
-              >
-                {isUploading || isSubmittingAssignment ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Subiendo...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Subir Entrega
-                  </>
-                )}
-              </Button>
             </div>
-          </form>
-        </Form>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+              className="rounded-xl border-slate-200"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading || !selectedFile}
+              className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/25 min-w-[140px]"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {uploadProgress < 100 ? "Subiendo..." : "Guardando..."}
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Entregar Tarea
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
