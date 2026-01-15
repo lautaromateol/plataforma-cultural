@@ -1,18 +1,13 @@
 "use client"
-
 import { useParams } from "next/navigation"
+import { AlertCircle } from "lucide-react"
 import { useGetYearDetails } from "@/features/year/api/use-get-year-details"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
 import { YearStats } from "./components/year-stats"
 import { YearCourses } from "./components/year-courses"
 import { YearTeachers } from "./components/year-teachers"
 import { YearSubjects } from "./components/year-subjects"
-import { useGetTeachers } from "@/features/user/api/use-get-teachers"
-import { useGetCourses } from "@/features/course/api/use-get-courses"
-import { useGetSubjects } from "@/features/subject/api/use-get-subjects"
-import { useGetStudents } from "@/features/user/api/use-get-students"
 import { YearStudents } from "./components/year-students"
 
 export default function YearDetailsPage() {
@@ -20,15 +15,6 @@ export default function YearDetailsPage() {
   const level = parseInt(params.level as string)
 
   const { yearDetails, isPending, error } = useGetYearDetails(level)
-  const { students, isPending: isStudentsPending, error: studentsError } = useGetStudents({ yearId: yearDetails?.year.id })
-  const { teachers, isPending: isTeachersPending, error: teachersError } = useGetTeachers({ yearId: yearDetails?.year.id })
-  const { courses, isPending: isCoursesPending, error: coursesError } = useGetCourses({ yearId: yearDetails?.year.id })
-  const { subjects, isPending: isSubjectsPending, error: subjectsError } = useGetSubjects({ yearId: yearDetails?.year.id })
-
-  const studentsData = { students, courses, isPending: isStudentsPending, error: studentsError }
-  const teachersData = { teachers, isPending: isTeachersPending, error: teachersError }
-  const coursesData = { courses, isPending: isCoursesPending, error: coursesError }
-  const subjectsData = { subjects, isPending: isSubjectsPending, error: subjectsError }
 
   if (isPending) {
     return (
@@ -81,15 +67,15 @@ export default function YearDetailsPage() {
         )}
       </div>
 
-      <YearStats studentsLength={studentsData.students?.length || 0} teachersLength={teachersData.teachers?.length || 0} coursesLength={coursesData.courses?.length || 0} subjectsLength={subjectsData.subjects?.length || 0} />
+      <YearStats year={year} />
 
-      <YearStudents data={studentsData} yearName={year.name} yearId={year.id} />
+      <YearStudents year={year} />
 
-      <YearTeachers data={teachersData} yearName={year.name} />
+      <YearTeachers year={year} />
 
-      <YearCourses data={coursesData} yearName={year.name} />
+      <YearCourses year={year} />
 
-      <YearSubjects data={subjectsData} yearName={year.name} />
+      <YearSubjects year={year} />
     </div>
   )
 }

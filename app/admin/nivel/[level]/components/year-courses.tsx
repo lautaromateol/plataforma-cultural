@@ -1,28 +1,18 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { YearSection } from "./year-section";
 import { CoursesTable } from "./courses-table";
-import { Course } from "@/features/course/api/use-get-courses";
+import { useGetCourses } from "@/features/course/api/use-get-courses";
+import { Year } from "@/features/year/schemas";
 
-export function YearCourses({ yearName, data }: { yearName: string, data: { courses: Course[] | undefined; isPending: boolean; error: Error | null } }) {
-    const { error, isPending, courses } = data
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Cursos</CardTitle>
-                <CardDescription>
-                    Grupos de estudiantes de {yearName}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                {isPending ? (
-                    <div>Cargando cursos...</div>
-                ) : error ? (
-                    <div>Error al cargar los cursos: {error.message}</div>
-                ) : courses && courses.length > 0 ? (
-                    <CoursesTable data={courses} />
-                ) : (
-                    <div>No hay cursos asignados a este año.</div>
-                )}
-            </CardContent>
-        </Card>
-    )
+export function YearCourses({ year }: { year: Year }) {
+  const { courses, isPending, error } = useGetCourses({ yearId: year.id });
+  return (
+    <YearSection
+      title="Cursos"
+      yearName={year.name}
+      isPending={isPending}
+      error={error}
+    >
+      <CoursesTable data={courses ?? []} />
+    </YearSection>
+  );
 }

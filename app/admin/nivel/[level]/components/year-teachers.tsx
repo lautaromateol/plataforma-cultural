@@ -1,31 +1,19 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { YearSection } from "./year-section";
 import { TeachersTable } from "./teachers-table";
-import { Teacher } from "@/features/user/api/use-get-teachers";
+import { useGetTeachers } from "@/features/user/api/use-get-teachers";
+import { Year } from "@/features/year/schemas";
 
+export function YearTeachers({ year }: { year: Year }) {
+  const { teachers, isPending, error } = useGetTeachers({ yearId: year.id });
 
-export function YearTeachers({ yearName, data }: { yearName: string, data: { teachers: Teacher[] | undefined; isPending: boolean; error: Error | null } }) {
-
-    const { error, isPending, teachers } = data
-
-    return (
-        <Card >
-            <CardHeader>
-                <CardTitle>Profesores</CardTitle>
-                <CardDescription>
-                    Docentes que dictan clases en {yearName}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                {isPending ? (
-                    <div>Cargando profesores...</div>
-                ) : error ? (
-                    <div>Error al cargar los profesores: {error.message}</div>
-                ) : teachers && teachers.length > 0 ? (
-                    <TeachersTable data={teachers} />
-                ) : (
-                    <div>No hay profesores asignados a este año.</div>
-                )}
-            </CardContent>
-        </Card>
-    )
+  return (
+    <YearSection
+      title="Profesores"
+      yearName={year.name}
+      isPending={isPending}
+      error={error}
+    >
+      <TeachersTable data={teachers ?? []} />
+    </YearSection>
+  );
 }
