@@ -29,10 +29,10 @@ const app = new Hono()
             select: {
               name: true,
               subjects: { select: { id: true } },
-            }
+            },
           },
           _count: {
-            select: { enrollments: true},
+            select: { enrollments: true },
           },
         },
         orderBy: [{ academicYear: "desc" }, { name: "asc" }],
@@ -44,7 +44,7 @@ const app = new Hono()
         academicYear: course.academicYear,
         year: course.year,
         classroom: course.classroom,
-        capacity: course.capacity, 
+        capacity: course.capacity,
         subjectsCount: course.year.subjects.length,
         enrollmentCount: course._count.enrollments,
       }));
@@ -64,44 +64,9 @@ const app = new Hono()
         where: { id },
         include: {
           year: {
-            include: {
-              // Incluir TODAS las materias del año
-              subjects: {
-                orderBy: { name: "asc" },
-              },
-            },
-          },
-          courseSubjects: {
-            include: {
-              subject: true,
-              teacher: {
-                select: { 
-                  id: true, 
-                  name: true, 
-                  dni: true, 
-                  email: true,
-                  teacherProfile: true,
-                },
-              },
-            },
-          },
-          enrollments: {
-            include: {
-              student: {
-                select: { 
-                  id: true, 
-                  name: true, 
-                  dni: true, 
-                  email: true,
-                  role: true,
-                  studentProfile: true,
-                },
-              },
-            },
-            orderBy: {
-              student: {
-                name: "asc",
-              },
+            select: {
+              id: true,
+              name: true
             },
           },
           _count: {
@@ -114,31 +79,12 @@ const app = new Hono()
         return c.json({ message: "Curso no encontrado" }, 404);
       }
 
-      // Crear mapa de CourseSubject para acceso rápido
-      const courseSubjectMap = new Map(
-        course.courseSubjects.map((cs) => [cs.subjectId, cs])
+      return c.json(
+        {
+          course,
+        },
+        200
       );
-
-      // Combinar materias del año con info de CourseSubject
-      const subjectsWithAssignment = course.year.subjects.map((subject) => {
-        const assignment = courseSubjectMap.get(subject.id);
-        return {
-          id: subject.id,
-          name: subject.name,
-          code: subject.code,
-          description: subject.description,
-          courseSubjectId: assignment?.id || null,
-          schedule: assignment?.schedule || null,
-          teacher: assignment?.teacher || null,
-        };
-      });
-
-      return c.json({ 
-        course: {
-          ...course,
-          subjectsWithAssignment,
-        }
-      }, 200);
     } catch (error) {
       console.error(error);
       return c.json({ message: "Error al obtener el curso" }, 500);
