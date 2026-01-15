@@ -33,6 +33,8 @@ export function useAssignTeacher(courseId: string) {
     },
     onSuccess: (data) => {
       toast.success(data.message || "Profesor asignado exitosamente");
+      queryClient.invalidateQueries({ queryKey: ["course-subjects", courseId] });
+      queryClient.invalidateQueries({ queryKey: ["course-subjects"] });
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: ["courses"] });
     },

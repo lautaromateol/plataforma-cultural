@@ -41,6 +41,8 @@ export function useUpdateAssignment(courseId: string) {
     },
     onSuccess: (data) => {
       toast.success(data.message || "Asignación actualizada exitosamente");
+      queryClient.invalidateQueries({ queryKey: ["course-subjects", courseId] });
+      queryClient.invalidateQueries({ queryKey: ["course-subjects"] });
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: ["courses"] });
     },
