@@ -4,44 +4,26 @@ import auth from "@/lib/middlewares/auth-middleware";
 const app = new Hono()
   .use("*", auth)
 
-  // Obtener información de una materia con verificación de permisos
+  // Obtener información básica de una materia
   .get("/:subjectId", async (c) => {
     const prisma = c.get("prisma");
     const user = c.get("user");
     const { subjectId } = c.req.param();
 
     try {
-      // Obtener la materia con todas sus relaciones
+      // Obtener la materia
       const subject = await prisma.subject.findUnique({
         where: { id: subjectId },
-        include: {
-          year: true,
-          courseSubjects: {
-            include: {
-              teacher: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-              course: {
-                include: {
-                  enrollments: {
-                    where: { status: "ACTIVE" },
-                    select: {
-                      studentId: true,
-                      student: {
-                        select: {
-                          id: true,
-                          name: true,
-                          email: true,
-                        },
-                      },
-                    },
-                  },
-                },
-              },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          description: true,
+          year: {
+            select: {
+              id: true,
+              name: true,
+              level: true,
             },
           },
         },
@@ -51,37 +33,37 @@ const app = new Hono()
         return c.json({ message: "Materia no encontrada" }, 404);
       }
 
-      // Verificar permisos
+      // Verificar acceso
+      const courseSubjects = await prisma.courseSubject.findMany({
+        where: { subjectId },
+        include: {
+          course: {
+            include: {
+              enrollments: {
+                where: { status: "ACTIVE", studentId: user.sub },
+              },
+            },
+          },
+        },
+      });
+
       let hasAccess = false;
       let isTeacher = false;
-      let teacherIds: string[] = [];
 
       if (user.role === "ADMIN") {
         hasAccess = true;
-        isTeacher = true; // Admin tiene permisos de profesor
+        isTeacher = true;
       } else if (user.role === "TEACHER") {
-        // Verificar si el profesor está asignado a esta materia
-        const isTeacherOfSubject = subject.courseSubjects.some(
+        const isTeacherOfSubject = courseSubjects.some(
           (cs) => cs.teacherId === user.sub
         );
         hasAccess = isTeacherOfSubject;
         isTeacher = isTeacherOfSubject;
-        
-        // Obtener todos los profesores de esta materia
-        teacherIds = subject.courseSubjects
-          .filter((cs) => cs.teacherId)
-          .map((cs) => cs.teacherId as string);
       } else if (user.role === "STUDENT") {
-        // Verificar si el estudiante está matriculado en un curso que tiene esta materia
-        const isEnrolled = subject.courseSubjects.some((cs) =>
-          cs.course.enrollments.some((e) => e.studentId === user.sub)
+        const isEnrolled = courseSubjects.some(
+          (cs) => cs.course.enrollments.length > 0
         );
         hasAccess = isEnrolled;
-        
-        // Obtener todos los profesores de esta materia
-        teacherIds = subject.courseSubjects
-          .filter((cs) => cs.teacherId)
-          .map((cs) => cs.teacherId as string);
       }
 
       if (!hasAccess) {
@@ -91,40 +73,8 @@ const app = new Hono()
         );
       }
 
-      // Obtener lista única de profesores
-      const teachers = subject.courseSubjects
-        .filter((cs) => cs.teacher)
-        .map((cs) => cs.teacher)
-        .filter(
-          (teacher, index, self) =>
-            teacher && self.findIndex((t) => t?.id === teacher.id) === index
-        );
-
-      // Obtener lista de cursos
-      const courses = subject.courseSubjects.map((cs) => ({
-        id: cs.course.id,
-        courseSubjectId: cs.id, // Incluir el ID del CourseSubject
-        name: cs.course.name,
-        classroom: cs.course.classroom,
-        schedule: cs.schedule,
-        studentsCount: cs.course.enrollments.length,
-        teacher: cs.teacher,
-      }));
-
       return c.json({
-        subject: {
-          id: subject.id,
-          name: subject.name,
-          code: subject.code,
-          description: subject.description,
-          year: {
-            id: subject.year.id,
-            name: subject.year.name,
-            level: subject.year.level,
-          },
-        },
-        teachers,
-        courses,
+        subject,
         permissions: {
           canEdit: isTeacher,
           canView: hasAccess,
@@ -132,7 +82,114 @@ const app = new Hono()
       });
     } catch (error) {
       console.error(error);
-      return c.json({ message: "Error al obtener materia" }, 500);
+      return c.json({ message: "Error al obtener información de la materia" }, 500);
+    }
+  })
+
+  // Obtener profesores de una materia
+  .get("/teachers/:subjectId", async (c) => {
+    const prisma = c.get("prisma");
+    const user = c.get("user");
+    const { subjectId } = c.req.param();
+
+    try {
+      // Verificar acceso a la materia
+      const subject = await prisma.subject.findUnique({
+        where: { id: subjectId },
+      });
+
+      if (!subject) {
+        return c.json({ message: "Materia no encontrada" }, 404);
+      }
+
+      // Obtener profesores de la materia
+      const courseSubjects = await prisma.courseSubject.findMany({
+        where: { subjectId },
+        include: {
+          teacher: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        distinct: ["teacherId"],
+      });
+
+      const teachers = courseSubjects
+        .map((cs) => cs.teacher)
+        .filter((teacher) => teacher !== null);
+
+      return c.json({ teachers }, 200);
+    } catch (error) {
+      console.error(error);
+      return c.json({ message: "Error al obtener profesores" }, 500);
+    }
+  })
+
+  // Obtener cursos de una materia
+  .get("/courses/:subjectId", async (c) => {
+    const prisma = c.get("prisma");
+    const user = c.get("user");
+    const { subjectId } = c.req.param();
+
+    try {
+      // Verificar acceso a la materia
+      const subject = await prisma.subject.findUnique({
+        where: { id: subjectId },
+      });
+
+      if (!subject) {
+        return c.json({ message: "Materia no encontrada" }, 404);
+      }
+
+      // Obtener cursos de la materia
+      const courseSubjects = await prisma.courseSubject.findMany({
+        where: { subjectId },
+        include: {
+          course: {
+            select: {
+              id: true,
+              name: true,
+              classroom: true,
+            },
+          },
+          teacher: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      const courses = courseSubjects.map((cs) => ({
+        id: cs.course.id,
+        courseSubjectId: cs.id,
+        name: cs.course.name,
+        classroom: cs.course.classroom,
+        schedule: cs.schedule,
+        studentsCount: 0, // Se llenará después
+        teacher: cs.teacher,
+      }));
+
+      // Obtener cantidad de estudiantes por curso
+      for (const course of courses) {
+        const enrollmentCount = await prisma.enrollment.count({
+          where: {
+            courseId: course.id,
+            status: "ACTIVE",
+          },
+        });
+        course.studentsCount = enrollmentCount;
+      }
+
+      return c.json({ courses }, 200);
+    } catch (error) {
+      console.error(error);
+      return c.json({ message: "Error al obtener cursos" }, 500);
     }
   });
 

@@ -1,7 +1,7 @@
 import { client } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
 
-// Hack para acceder a rutas con guiones: definimos una función que devuelve el endpoint
+// Tipos para la información básica de una materia
 const getEndpoint = () => (client.api as any)["subject-info"][":subjectId"]["$get"];
 type GetSubjectInfoEndpoint = ReturnType<typeof getEndpoint>;
 type GetSubjectInfoResponse = Awaited<ReturnType<GetSubjectInfoEndpoint>>;
@@ -10,8 +10,10 @@ type GetSubjectInfoJson = Awaited<ReturnType<GetSubjectInfoResponse["json"]>>;
 type SuccessResponse = Extract<GetSubjectInfoJson, { subject: unknown }>;
 type ErrorResponse = Extract<GetSubjectInfoJson, { message: string }>;
 
+export type SubjectInfo = SuccessResponse;
+
 export function useGetSubjectInfo(subjectId: string) {
-  const query = useQuery<SuccessResponse, Error>({
+  const query = useQuery<SubjectInfo, Error>({
     queryKey: ["subject-info", subjectId],
     queryFn: async () => {
       const response = await (client.api as any)["subject-info"][":subjectId"].$get({
