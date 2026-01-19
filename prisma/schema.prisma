@@ -21,16 +21,17 @@ model User {
   updatedAt         DateTime @updatedAt
 
   // Relaciones
-  studentProfile    StudentProfile?
-  teacherProfile    TeacherProfile?
-  enrollments       Enrollment[]
-  courseSubjects    CourseSubject[]
-  uploadedResources SubjectResource[]
-  createdQuizzes    Quiz[]
-  quizAttempts      QuizAttempt[]
-  createdAssignments Assignment[]
+  studentProfile        StudentProfile?
+  teacherProfile        TeacherProfile?
+  enrollments           Enrollment[]
+  courseSubjects        CourseSubject[]
+  uploadedResources     SubjectResource[]
+  createdQuizzes        Quiz[]
+  quizAttempts          QuizAttempt[]
+  createdAssignments    Assignment[]
   assignmentSubmissions AssignmentSubmission[]
-  notifications     Notification[]
+  notifications         Notification[]
+  announcements         Announcement[]
 
   @@map("users")
 }
@@ -109,6 +110,7 @@ model CourseSubject {
   teacher   User?   @relation(fields: [teacherId], references: [id])
 
   assignmentCourseSubjects AssignmentCourseSubject[]
+  announcements            Announcement[]
 
   @@unique([courseId, subjectId])
   @@map("course_subjects")
@@ -338,17 +340,17 @@ model Assignment {
   id          String   @id @default(cuid())
   title       String // Título de la entrega
   description String? // Descripción opcional
-  dueDate    DateTime // Fecha de entrega
-  hasGrade   Boolean  @default(true) // Si tiene calificación o no
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  dueDate     DateTime // Fecha de entrega
+  hasGrade    Boolean  @default(true) // Si tiene calificación o no
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relaciones
   createdById String
   createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   assignmentCourseSubjects AssignmentCourseSubject[]
-  submissions AssignmentSubmission[]
+  submissions              AssignmentSubmission[]
 
   @@map("assignments")
 }
@@ -371,16 +373,16 @@ model AssignmentCourseSubject {
 
 // Entrega del estudiante
 model AssignmentSubmission {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   fileName    String // Nombre del archivo original
   fileUrl     String // URL del archivo
   fileType    String // MIME type del archivo
   fileSize    Int // Tamaño en bytes
   grade       Float? // Calificación (null si no está calificada o si la entrega no tiene calificación)
   feedback    String? // Comentarios del profesor
-  submittedAt DateTime  @default(now())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  submittedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relaciones
   assignmentId String
@@ -395,16 +397,16 @@ model AssignmentSubmission {
 
 // Notificación para estudiantes
 model Notification {
-  id          String          @id @default(cuid())
-  type        NotificationType // QUIZ o ASSIGNMENT
-  title       String // Título de la notificación
-  message     String // Mensaje descriptivo
-  relatedId   String // ID del Quiz o Assignment relacionado
+  id              String           @id @default(cuid())
+  type            NotificationType // QUIZ o ASSIGNMENT
+  title           String // Título de la notificación
+  message         String // Mensaje descriptivo
+  relatedId       String // ID del Quiz o Assignment relacionado
   courseSubjectId String // ID del CourseSubject para navegación
-  isRead      Boolean         @default(false)
-  expiresAt   DateTime // Fecha de expiración (72 horas después de creada)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  isRead          Boolean          @default(false)
+  expiresAt       DateTime // Fecha de expiración (72 horas después de creada)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   // Relaciones
   studentId String
@@ -416,4 +418,16 @@ model Notification {
 enum NotificationType {
   QUIZ
   ASSIGNMENT
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacherId       String
+  teacher         User          @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  courseSubjectId String
+  courseSubject   CourseSubject @relation(fields: [courseSubjectId], references: [id], onDelete: Cascade)
 }
