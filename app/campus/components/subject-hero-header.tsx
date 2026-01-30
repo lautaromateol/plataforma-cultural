@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useGetSubjectInfo } from "@/features/subject-resource/api/use-get-subject-info";
+import { useGetSubjectTeachers } from "@/features/subject-resource/api/use-get-subject-teachers";
+import { useGetSubjectCourses } from "@/features/subject-resource/api/use-get-subject-courses";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Subject = {
   id: string;
@@ -31,9 +35,7 @@ type Course = {
 };
 
 interface SubjectHeroHeaderProps {
-  subject: Subject;
-  courses: Course[];
-  teachers: { id: string; name: string; email: string | null }[];
+  subjectId: string;
   colors: {
     bg: string;
     light: string;
@@ -43,15 +45,18 @@ interface SubjectHeroHeaderProps {
 }
 
 export function SubjectHeroHeader({
-  subject,
-  courses,
-  teachers,
+  subjectId,
   colors,
 }: SubjectHeroHeaderProps) {
+  const { data: subjectData } = useGetSubjectInfo(subjectId);
+  const { data: teachers = [] } = useGetSubjectTeachers(subjectId);
+  const { data: courses = [] } = useGetSubjectCourses(subjectId);
+
+  const subject = subjectData?.subject;
   const totalStudents = courses.reduce((acc, course) => acc + course.studentsCount, 0);
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-r ${colors.bg}`}>
+    <div className={`relative overflow-hidden bg-linear-to-r ${colors.bg}`}>
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-white blur-3xl" />
@@ -80,24 +85,33 @@ export function SubjectHeroHeader({
                 <BookOpen className="h-10 w-10 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
-                  {subject.name}
-                </h1>
-                <div className="flex items-center gap-3 mt-2">
-                  {subject.code && (
-                    <Badge className="bg-white/20 text-white border-0 font-mono text-sm backdrop-blur-sm">
-                      {subject.code}
-                    </Badge>
-                  )}
-                  <span className="text-white/80 text-sm font-medium">
-                    {subject.year.name}
-                  </span>
-                </div>
+                {subject ? (
+                  <>
+                    <h1 className="text-4xl lg:text-5xl font-bold text-white tracking-tight">
+                      {subject.name}
+                    </h1>
+                    <div className="flex items-center gap-3 mt-2">
+                      {subject.code && (
+                        <Badge className="bg-white/20 text-white border-0 font-mono text-sm backdrop-blur-sm">
+                          {subject.code}
+                        </Badge>
+                      )}
+                      <span className="text-white/80 text-sm font-medium">
+                        {subject.year.name}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Skeleton className="h-10 w-64 bg-white/20 mb-2" />
+                    <Skeleton className="h-6 w-40 bg-white/20" />
+                  </>
+                )}
               </div>
             </div>
 
             {/* Description */}
-            {subject.description && (
+            {subject?.description && (
               <p className="text-white/90 text-lg max-w-2xl leading-relaxed">
                 {subject.description}
               </p>
