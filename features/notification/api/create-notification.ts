@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@/src/generated/prisma/client";
 
-type NotificationType = "QUIZ" | "ASSIGNMENT";
+type NotificationType = "QUIZ" | "ASSIGNMENT" | "ANNOUNCEMENT";
 
 interface CreateNotificationParams {
   prisma: PrismaClient;
