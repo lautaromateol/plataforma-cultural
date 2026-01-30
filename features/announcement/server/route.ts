@@ -2,35 +2,37 @@ import auth from "@/lib/middlewares/auth-middleware";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { createAnnouncementSchema } from "../schemas";
+import { createNotifications } from "@/features/notification/api/create-notification";
+import { format } from "date-fns";
 
 const app = new Hono()
     .use("*", auth)
-    .use("*", async (c, next) => {
-        const user = c.get("user")
-        if (user.role !== "TEACHER") {
-            return c.json({ message: "No estas autorizado a realizar esta acción." }, 403)
-        }
-
-        await next();
-    })
-    .get("/:courseSubjectId", async (c) => {
+    .get("/:subjectId", async (c) => {
         try {
             const prisma = c.get("prisma")
-            const { courseSubjectId } = c.req.param()
+            const { subjectId } = c.req.param()
 
-            const courseSubject = await prisma.courseSubject.findUnique({
+            const subject = await prisma.subject.findUnique({
                 where: {
-                    id: courseSubjectId
+                    id: subjectId
                 }
             })
 
-            if (!courseSubject) {
-                return c.json({ message: "No existe la relación curso-materia en la que intentas crear el anuncio." }, 404)
+            if (!subject) {
+                return c.json({ message: "No existe la materia." }, 404)
             }
 
             const announcements = await prisma.announcement.findMany({
                 where: {
-                    courseSubjectId
+                    subjectId: subject.id
+                },
+                include: {
+                    teacher: {
+                        select: {
+                            id: true,
+                            name: true
+                        }
+                    }
                 }
             })
 
@@ -40,42 +42,106 @@ const app = new Hono()
         }
     })
     .post(
-        "/:courseSubjectId",
+        "/:subjectId",
         zValidator("json", createAnnouncementSchema, (result, c) => {
             if (!result.success) {
                 return c.json({ message: "Datos invalidos", errors: result.error.issues }, 400)
             }
         }),
         async (c) => {
+            const user = c.get("user")
+            if (user.role !== "TEACHER") {
+                return c.json({ message: "No estas autorizado a realizar esta acción." }, 403)
+            }
             try {
-                const user = c.get("user")
                 const prisma = c.get("prisma")
-                const { courseSubjectId } = c.req.param()
-                const { message } = c.req.valid("json")
+                const { subjectId } = c.req.param()
+                const { title, message } = c.req.valid("json")
 
                 const teacherId = user.sub
 
-                const dbCourseSubject = await prisma.courseSubject.findUnique({
+                const subject = await prisma.subject.findUnique({
                     where: {
-                        id: courseSubjectId
+                        id: subjectId,
+                    },
+                    include: {
+                        courseSubjects: {
+                            where: {
+                                teacherId
+                            }
+                        }
                     }
                 })
 
-                if (!dbCourseSubject) {
-                    return c.json({ message: "No existe la relación curso-materia en la que intentas crear el anuncio." }, 404)
+                if (!subject) {
+                    return c.json({ message: "No existe la materia en la que intentas crear el anuncio." }, 404)
                 }
 
-                if (dbCourseSubject.teacherId !== teacherId) {
-                    return c.json({ message: "No eres un profesor autorizado para este curso." }, 403)
+                if (!subject.courseSubjects.find(cs => cs.teacherId === teacherId)) {
+                    return c.json({ message: "No estas autorizado a crear un aviso en esta materia." }, 403)
                 }
 
                 const announcement = await prisma.announcement.create({
                     data: {
+                        title,
                         message,
                         teacherId,
-                        courseSubjectId
+                        subjectId
                     }
                 })
+
+                // Obtener información de los cursos-materias con enrollments para las notificaciones
+                const courseSubjectsWithEnrollments = await prisma.courseSubject.findMany({
+                    where: {
+                        subjectId
+                    },
+                    include: {
+                        course: {
+                            include: {
+                                enrollments: {
+                                    where: { status: "ACTIVE" },
+                                    select: {
+                                        studentId: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                })
+
+                // Emitir notificaciones a todos los estudiantes de los cursos seleccionados
+                try {
+                    const notificationsToCreate: Array<{
+                        courseSubjectId: string;
+                        studentIds: string[];
+                    }> = [];
+
+                    courseSubjectsWithEnrollments.forEach((cs) => {
+                        const studentIds = cs.course.enrollments.map((e) => e.studentId);
+                        if (studentIds.length > 0) {
+                            notificationsToCreate.push({
+                                courseSubjectId: cs.id,
+                                studentIds,
+                            });
+                        }
+                    });
+
+                    // Crear notificaciones para cada curso-materia
+                    for (const notif of notificationsToCreate) {
+                        await createNotifications({
+                            prisma,
+                            type: "ANNOUNCEMENT",
+                            title: `Nuevo Aviso: ${announcement.title}`,
+                            message: announcement.message,
+                            relatedId: announcement.id,
+                            courseSubjectId: notif.courseSubjectId,
+                            studentIds: notif.studentIds,
+                        });
+                    }
+                } catch (notificationError) {
+                    console.error("Error al crear notificaciones:", notificationError);
+                    // No fallar la creación del aviso si falla la notificación
+                }
 
                 return c.json({ announcement }, 200)
             } catch (error) {
@@ -91,11 +157,14 @@ const app = new Hono()
             }
         }),
         async (c) => {
+            const user = c.get("user")
+            if (user.role !== "TEACHER") {
+                return c.json({ message: "No estas autorizado a realizar esta acción." }, 403)
+            }
             try {
-                const user = c.get("user")
                 const prisma = c.get("prisma")
                 const { id } = c.req.param()
-                const { message } = c.req.valid("json")
+                const { title, message } = c.req.valid("json")
 
                 const teacherId = user.sub
 
@@ -118,6 +187,7 @@ const app = new Hono()
                         id
                     },
                     data: {
+                        title,
                         message,
                     }
                 })
@@ -131,8 +201,11 @@ const app = new Hono()
     .delete(
         "/:id",
         async (c) => {
+            const user = c.get("user")
+            if (user.role !== "TEACHER") {
+                return c.json({ message: "No estas autorizado a realizar esta acción." }, 403)
+            }
             try {
-                const user = c.get("user")
                 const prisma = c.get("prisma")
                 const { id } = c.req.param()
 
