@@ -18,8 +18,10 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Toaster />
-        <ModalsProvider />
-        <Providers>{children}</Providers>
+        <Providers>
+          <ModalsProvider />
+          {children}
+        </Providers>
       </body>
     </html>
   );
