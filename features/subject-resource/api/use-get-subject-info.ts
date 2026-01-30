@@ -2,8 +2,7 @@ import { client } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
 
 // Tipos para la información básica de una materia
-const getEndpoint = () => (client.api as any)["subject-info"][":subjectId"]["$get"];
-type GetSubjectInfoEndpoint = ReturnType<typeof getEndpoint>;
+type GetSubjectInfoEndpoint = (typeof client.api["subject-info"][":subjectId"]["$get"])
 type GetSubjectInfoResponse = Awaited<ReturnType<GetSubjectInfoEndpoint>>;
 type GetSubjectInfoJson = Awaited<ReturnType<GetSubjectInfoResponse["json"]>>;
 
