@@ -3,6 +3,7 @@
 import { Upload, FileText } from "lucide-react";
 import { AssignmentList } from "@/features/assignment/components/assignment-list";
 import { QuizList } from "@/features/quiz/components/quiz-list";
+import { useGetUser } from "@/features/auth/api/use-get-user";
 
 interface ContentSectionsProps {
   subjectId: string;
@@ -12,16 +13,15 @@ interface ContentSectionsProps {
     text: string;
     border: string;
   };
-  permissions: {
-    canEdit: boolean;
-  };
 }
 
 export function ContentSections({
   subjectId,
   colors,
-  permissions,
 }: ContentSectionsProps) {
+  const { user } = useGetUser();
+  const canEdit = user?.role === "TEACHER";
+
   return (
     <div className="space-y-6">
       {/* Assignments Section */}
@@ -34,7 +34,7 @@ export function ContentSections({
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Entregas</h2>
               <p className="text-sm text-slate-500">
-                {permissions.canEdit
+                {canEdit
                   ? "Gestiona las entregas de los estudiantes"
                   : "Sube tus trabajos y revisa tus calificaciones"}
               </p>
