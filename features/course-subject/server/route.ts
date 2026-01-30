@@ -20,21 +20,79 @@ const app = new Hono()
     const { courseId } = c.req.query();
 
     try {
-      const where: any = {};
-      if (courseId) where.courseId = courseId;
-
-      const courseSubjects = await prisma.courseSubject.findMany({
-        where,
-        include: {
-          course: {
-            include: { year: true },
+      if (!courseId) {
+        // Si no se proporciona courseId, devolver todos los courseSubjects
+        const courseSubjects = await prisma.courseSubject.findMany({
+          include: {
+            course: {
+              include: { year: true },
+            },
+            subject: true,
+            teacher: {
+              select: { id: true, name: true, email: true },
+            },
           },
-          subject: true,
+          orderBy: { createdAt: "desc" },
+        });
+
+        return c.json({ courseSubjects }, 200);
+      }
+
+      // Obtener el curso y su año
+      const course = await prisma.course.findUnique({
+        where: { id: courseId },
+        include: { year: true },
+      });
+
+      if (!course) {
+        return c.json({ message: "Curso no encontrado" }, 404);
+      }
+
+      // Obtener todas las materias del año
+      const allSubjects = await prisma.subject.findMany({
+        where: { yearId: course.yearId },
+      });
+
+      // Obtener los courseSubjects existentes para este curso
+      const existingCourseSubjects = await prisma.courseSubject.findMany({
+        where: { courseId },
+        include: {
           teacher: {
             select: { id: true, name: true, email: true },
           },
         },
-        orderBy: { createdAt: "desc" },
+      });
+
+      // Crear un mapa de los courseSubjects existentes para búsqueda rápida
+      const courseSubjectMap = new Map(
+        existingCourseSubjects.map((cs) => [cs.subjectId, cs])
+      );
+
+      // Construir la respuesta con todas las materias, asignadas o no
+      const courseSubjects = allSubjects.map((subject) => {
+        const existing = courseSubjectMap.get(subject.id);
+        return {
+          id: existing?.id || "",
+          schedule: existing?.schedule || null,
+          createdAt: existing?.createdAt || new Date(),
+          updatedAt: existing?.updatedAt || new Date(),
+          courseId,
+          course: {
+            id: course.id,
+            name: course.name,
+            academicYear: course.academicYear,
+            capacity: course.capacity,
+            classroom: course.classroom,
+            createdAt: course.createdAt,
+            updatedAt: course.updatedAt,
+            yearId: course.yearId,
+            year: course.year,
+          },
+          subject,
+          teacher: existing?.teacher || null,
+          subjectId: subject.id,
+          teacherId: existing?.teacherId || null,
+        };
       });
 
       return c.json({ courseSubjects }, 200);
@@ -161,6 +219,42 @@ const app = new Hono()
     } catch (error) {
       console.error(error);
       return c.json({ message: "Error al eliminar la asignación" }, 500);
+    }
+  })
+  // Obtener courseSubjects por subjectId (para notificaciones)
+  .get("/by-subject/:subjectId", async (c) => {
+    const prisma = c.get("prisma");
+    const { subjectId } = c.req.param();
+
+    try {
+      // Verificar que la materia existe
+      const subject = await prisma.subject.findUnique({
+        where: { id: subjectId },
+      });
+
+      if (!subject) {
+        return c.json({ message: "Materia no encontrada" }, 404);
+      }
+
+      // Obtener todos los courseSubjects de esta materia
+      const courseSubjects = await prisma.courseSubject.findMany({
+        where: { subjectId },
+        select: {
+          id: true,
+          courseId: true,
+          course: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      return c.json({ courseSubjects }, 200);
+    } catch (error) {
+      console.error(error);
+      return c.json({ message: "Error al obtener courseSubjects" }, 500);
     }
   });
 
