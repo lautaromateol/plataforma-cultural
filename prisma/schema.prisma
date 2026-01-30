@@ -67,6 +67,7 @@ model Subject {
   courseSubjects CourseSubject[]
   resources      SubjectResource[]
   quizzes        Quiz[]
+  announcements  Announcement[]
 
   @@unique([yearId, name])
   @@map("subjects")
@@ -110,7 +111,6 @@ model CourseSubject {
   teacher   User?   @relation(fields: [teacherId], references: [id])
 
   assignmentCourseSubjects AssignmentCourseSubject[]
-  announcements            Announcement[]
 
   @@unique([courseId, subjectId])
   @@map("course_subjects")
@@ -418,6 +418,7 @@ model Notification {
 enum NotificationType {
   QUIZ
   ASSIGNMENT
+  ANNOUNCEMENT
 }
 
 model Announcement {
@@ -427,8 +428,8 @@ model Announcement {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  teacherId       String
-  teacher         User          @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  courseSubjectId String
-  courseSubject   CourseSubject @relation(fields: [courseSubjectId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   User    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 }
