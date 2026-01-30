@@ -14,6 +14,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useGetResources } from "@/features/subject-resource/api/use-get-resources";
+import { useDeleteResource } from "@/features/subject-resource/api/use-delete-resource";
+import { useGetUser } from "@/features/auth/api/use-get-user";
+import { useOpenUploadResource } from "@/features/subject-resource/hooks/use-open-upload-resource";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Resource = {
   id: string;
@@ -32,31 +37,28 @@ type Resource = {
 };
 
 interface ResourcesSectionProps {
-  resources: Resource[];
+  subjectId: string;
   colors: {
     bg: string;
     light: string;
     text: string;
     border: string;
   };
-  permissions: {
-    canEdit: boolean;
-  };
-  onUploadClick: () => void;
-  onDeleteResource: (resourceId: string) => void;
-  isDeletingResource: boolean;
 }
 
 export function ResourcesSection({
-  resources,
+  subjectId,
   colors,
-  permissions,
-  onUploadClick,
-  onDeleteResource,
-  isDeletingResource,
 }: ResourcesSectionProps) {
+  const { user } = useGetUser();
+  const { resources = [], isPending: isLoadingResources } = useGetResources(subjectId);
+  const { deleteResource, isDeletingResource } = useDeleteResource(subjectId);
+  const { open: openUploadDialog } = useOpenUploadResource();
+  
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
+
+  const canEdit = user?.role === "TEACHER";
 
   const handleDeleteClick = (resourceId: string) => {
     setResourceToDelete(resourceId);
@@ -65,7 +67,7 @@ export function ResourcesSection({
 
   const handleConfirmDelete = () => {
     if (resourceToDelete) {
-      onDeleteResource(resourceToDelete);
+      deleteResource(resourceToDelete);
       setDeleteDialogOpen(false);
       setResourceToDelete(null);
     }
@@ -87,10 +89,11 @@ export function ResourcesSection({
               </p>
             </div>
           </div>
-          {permissions.canEdit && (
+          {canEdit && (
             <Button
-              onClick={onUploadClick}
-              className={`bg-gradient-to-r ${colors.bg} hover:opacity-90 shadow-lg shadow-slate-200`}
+              onClick={() => openUploadDialog(subjectId)}
+              disabled={isLoadingResources}
+              className={`bg-linear-to-r ${colors.bg} hover:opacity-90 shadow-lg shadow-slate-200`}
             >
               <Upload className="w-4 h-4 mr-2" />
               Subir Recurso
@@ -100,7 +103,20 @@ export function ResourcesSection({
 
         {/* Resources List */}
         <div className="p-6">
-          {resources.length === 0 ? (
+          {isLoadingResources ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-start gap-4 p-5 rounded-2xl">
+                  <Skeleton className="w-14 h-14 rounded-2xl shrink-0" />
+                  <div className="flex-1 space-y-3">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : resources.length === 0 ? (
             <div className="text-center py-16">
               <div className={`w-20 h-20 rounded-3xl ${colors.light} flex items-center justify-center mx-auto mb-5`}>
                 <Sparkles className={`w-10 h-10 ${colors.text}`} />
@@ -109,14 +125,14 @@ export function ResourcesSection({
                 No hay recursos aún
               </h3>
               <p className="text-slate-500 max-w-sm mx-auto">
-                {permissions.canEdit
+                {canEdit
                   ? "Sube tu primer recurso para que los alumnos puedan descargarlo"
                   : "Los profesores aún no han subido recursos para esta materia"}
               </p>
-              {permissions.canEdit && (
+              {canEdit && (
                 <Button
-                  onClick={onUploadClick}
-                  className={`mt-6 bg-gradient-to-r ${colors.bg} hover:opacity-90`}
+                  onClick={() => openUploadDialog(subjectId)}
+                  className={`mt-6 bg-linear-to-r ${colors.bg} hover:opacity-90`}
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   Subir primer recurso
@@ -132,7 +148,7 @@ export function ResourcesSection({
                 >
                   {/* File Icon */}
                   <div
-                    className={`shrink-0 p-3.5 rounded-2xl bg-gradient-to-br ${getFileColor(resource.fileType)} text-white shadow-lg`}
+                    className={`shrink-0 p-3.5 rounded-2xl bg-linear-to-br ${getFileColor(resource.fileType)} text-white shadow-lg`}
                   >
                     {getFileIcon(resource.fileType)}
                   </div>
@@ -176,13 +192,13 @@ export function ResourcesSection({
                     >
                       <Button
                         size="sm"
-                        className={`bg-gradient-to-r ${colors.bg} hover:opacity-90 shadow-md`}
+                        className={`bg-linear-to-r ${colors.bg} hover:opacity-90 shadow-md`}
                       >
                         <Download className="w-4 h-4 mr-1.5" />
                         Descargar
                       </Button>
                     </a>
-                    {permissions.canEdit && (
+                    {canEdit && (
                       <Button
                         size="sm"
                         variant="outline"
