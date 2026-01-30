@@ -1,7 +1,7 @@
 import { client } from "@/lib/client";
 import { useQuery } from "@tanstack/react-query";
 
-type GetAnnouncementsEndpoint = (typeof client.api.announcement)[":courseSubjectId"]["$get"]
+type GetAnnouncementsEndpoint = (typeof client.api.announcement)[":subjectId"]["$get"]
 type GetAnnouncementsResponse = Awaited<ReturnType<GetAnnouncementsEndpoint>>;
 type GetAnnouncementsJson = Awaited<ReturnType<GetAnnouncementsResponse["json"]>>;
 
@@ -11,15 +11,15 @@ type ErrorResponse = Extract<GetAnnouncementsJson, { message: string }>;
 export type Announcement = NonNullable<SuccessResponse["announcements"]>[number]
 
 type UseGetAnnouncementsParams = {
-    courseSubjectId: string
+    subjectId: string
 }
 
 export function useGetAnnouncements(params: UseGetAnnouncementsParams) {
     const { data: announcements, isPending: isLoadingAnnouncements, error } = useQuery<Announcement[], Error>({
-        queryKey: ["announcements", params.courseSubjectId],
+        queryKey: ["announcements", params.subjectId],
         queryFn: async () => {
-            const response = await client.api.announcement[":courseSubjectId"]["$get"]({
-                param: { courseSubjectId: params.courseSubjectId }
+            const response = await client.api.announcement[":subjectId"]["$get"]({
+                param: { subjectId: params.subjectId }
             })
 
             const jsonData = (await response.json()) as GetAnnouncementsJson

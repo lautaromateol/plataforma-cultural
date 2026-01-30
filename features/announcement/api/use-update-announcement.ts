@@ -12,6 +12,8 @@ type RequestType = InferRequestType<typeof client.api.announcement[":id"]["$put"
 type SuccessResponse = Extract<UpdateAnnouncementJson, { announcement: unknown }>
 type ErrorResponse = Extract<UpdateAnnouncementJson, { message: string }>
 
+type UpdateAnnouncementResponseData = Exclude<UpdateAnnouncementJson, ErrorResponse>
+
 type UseUpdateAnnouncementProps = {
     id: string
 }
@@ -19,7 +21,7 @@ type UseUpdateAnnouncementProps = {
 export function useUpdateAnnouncement(params: UseUpdateAnnouncementProps) {
     const queryClient = useQueryClient()
 
-    const { data: announcement, isPending: isUpdatingAnnouncement, error } = useMutation<Announcement, Error, RequestType>({
+    const { data: announcement, mutate: updateAnnouncement, isPending: isUpdatingAnnouncement, error } = useMutation<UpdateAnnouncementResponseData["announcement"], Error, RequestType>({
         mutationFn: async (json) => {
             const response = await client.api.announcement[":id"]["$put"]({
                 param: { id: params.id },
@@ -41,9 +43,9 @@ export function useUpdateAnnouncement(params: UseUpdateAnnouncementProps) {
         onError: (error) => toast.error(error.message),
         onSuccess: (data) => {
             toast.success("Aviso actualizado exitosamente.")
-            queryClient.invalidateQueries({ queryKey: ["announcements", data.courseSubjectId] })
+            queryClient.invalidateQueries({ queryKey: ["announcements", data.subjectId] })
         }
     })
 
-    return { announcement, isUpdatingAnnouncement, error }
+    return { announcement, updateAnnouncement, isUpdatingAnnouncement, error }
 }

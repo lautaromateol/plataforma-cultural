@@ -11,17 +11,19 @@ type DeleteAnnouncementJson = Awaited<ReturnType<DeleteAnnouncementResponse["jso
 type SuccessResponse = Extract<DeleteAnnouncementJson, { announcement: unknown }>
 type ErrorResponse = Extract<DeleteAnnouncementJson, { message: string }>
 
+type DeleteAnnouncementResponseData = Exclude<DeleteAnnouncementJson, ErrorResponse>
+
 type UseDeleteAnnouncementProps = {
-    id: string
+    subjectId: string
 }
 
 export function useDeleteAnnouncement(params: UseDeleteAnnouncementProps) {
     const queryClient = useQueryClient()
 
-    const { data: announcement, isPending: isDeletingAnnouncement, error } = useMutation<Announcement, Error>({
-        mutationFn: async () => {
+    const { data: announcement, mutate: deleteAnnouncement, isPending: isDeletingAnnouncement, error } = useMutation<DeleteAnnouncementResponseData["announcement"], Error, string>({
+        mutationFn: async (id: string) => {
             const response = await client.api.announcement[":id"]["$delete"]({
-                param: { id: params.id }
+                param: { id }
             })
 
             const jsonData = (await response.json()) as DeleteAnnouncementJson
@@ -38,11 +40,11 @@ export function useDeleteAnnouncement(params: UseDeleteAnnouncementProps) {
             return successData.announcement
         },
         onError: (error) => toast.error(error.message),
-        onSuccess: (data) => {
+        onSuccess: () => {
             toast.success("Aviso eliminado exitosamente.")
-            queryClient.invalidateQueries({ queryKey: ["announcements", data.courseSubjectId] })
+            queryClient.invalidateQueries({ queryKey: ["announcements", params.subjectId] })
         }
     })
 
-    return { announcement, isDeletingAnnouncement, error }
+    return { announcement, deleteAnnouncement, isDeletingAnnouncement, error }
 }

@@ -1,28 +1,30 @@
+"use client";
 import { client } from "@/lib/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Announcement } from "./use-get-announcements";
 import { InferRequestType } from "hono";
 import { toast } from "sonner";
 
-type CreateAnnouncementEndpoint = (typeof client.api.announcement)[":courseSubjectId"]["$post"];
+type CreateAnnouncementEndpoint = (typeof client.api.announcement)[":subjectId"]["$post"];
 type CreateAnnouncementResponse = Awaited<ReturnType<CreateAnnouncementEndpoint>>
 type CreateAnnouncementJson = Awaited<ReturnType<CreateAnnouncementResponse["json"]>>
-type RequestType = InferRequestType<typeof client.api.announcement[":courseSubjectId"]["$post"]>["json"]
+type RequestType = InferRequestType<typeof client.api.announcement[":subjectId"]["$post"]>["json"]
 
 type SuccessResponse = Extract<CreateAnnouncementJson, { announcement: unknown }>
 type ErrorResponse = Extract<CreateAnnouncementJson, { message: string }>
 
+type CreateAnnouncementResponseData = Exclude<CreateAnnouncementJson, ErrorResponse>
+
 type UseCreateAnnouncementProps = {
-    courseSubjectId: string;
+    subjectId: string;
 }
 
 export function useCreateAnnouncement(params: UseCreateAnnouncementProps) {
     const queryClient = useQueryClient()
 
-    const { data: announcement, isPending: isCreatingAnnouncement, error } = useMutation<Announcement, Error, RequestType>({
+    const { data: announcement, mutate: createAnnouncement, isPending: isCreatingAnnouncement, error } = useMutation<CreateAnnouncementResponseData["announcement"], Error, RequestType>({
         mutationFn: async (json) => {
-            const response = await client.api.announcement[":courseSubjectId"]["$post"]({
-                param: { courseSubjectId: params.courseSubjectId },
+            const response = await client.api.announcement[":subjectId"]["$post"]({
+                param: { subjectId: params.subjectId },
                 json
             })
 
@@ -44,9 +46,9 @@ export function useCreateAnnouncement(params: UseCreateAnnouncementProps) {
         onError: (error) => toast.error(error.message),
         onSuccess: (data) => {
             toast.success("Aviso creado exitosamente.")
-            queryClient.invalidateQueries({ queryKey: ["announcements", data.courseSubjectId] })
+            queryClient.invalidateQueries({ queryKey: ["announcements", data.subjectId] })
         }
     })
 
-    return { announcement, isCreatingAnnouncement, error }
+    return { announcement, createAnnouncement, isCreatingAnnouncement, error }
 }
