@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useCreateResource } from "@/features/subject-resource/api/use-create-resource";
+import { useOpenUploadResource } from "@/features/subject-resource/hooks/use-open-upload-resource";
 import { 
   Upload, 
   Loader2, 
@@ -29,16 +23,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface UploadResourceDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   subjectId: string;
 }
 
 export function UploadResourceDialog({
-  open,
-  onOpenChange,
   subjectId,
 }: UploadResourceDialogProps) {
+  const { close } = useOpenUploadResource();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -171,7 +162,7 @@ export function UploadResourceDialog({
       setDescription("");
       setSelectedFile(null);
       setUploadProgress(0);
-      onOpenChange(false);
+      close();
       toast.success("Recurso subido exitosamente");
     } catch (error) {
       console.error("Error al subir archivo:", error);
@@ -190,32 +181,29 @@ export function UploadResourceDialog({
 
   const isLoading = isCreatingResource || isUploading;
 
+  const handleClose = () => {
+    if (!isLoading) {
+      close();
+      setTitle("");
+      setDescription("");
+      setSelectedFile(null);
+      setUploadProgress(0);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      if (!isLoading) {
-        onOpenChange(open);
-        if (!open) {
-          setTitle("");
-          setDescription("");
-          setSelectedFile(null);
-          setUploadProgress(0);
-        }
-      }
-    }}>
-      <DialogContent className="sm:max-w-[540px] rounded-3xl border-0 shadow-2xl">
-        <DialogHeader className="pb-2">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
-              <Cloud className="w-6 h-6" />
-            </div>
-            <div>
-              <DialogTitle className="text-xl">Subir Recurso</DialogTitle>
-              <DialogDescription className="mt-0.5">
-                Comparte archivos con tus alumnos
-              </DialogDescription>
-            </div>
+    <div className="space-y-5">
+        <div className="flex items-center gap-3 pb-2">
+          <div className="p-3 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+            <Cloud className="w-6 h-6" />
           </div>
-        </DialogHeader>
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">Subir Recurso</h2>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Comparte archivos con tus alumnos
+            </p>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
             {/* File Drop Zone */}
@@ -277,7 +265,7 @@ export function UploadResourceDialog({
                 )}>
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      "flex-shrink-0 p-3 rounded-xl text-white shadow-lg bg-gradient-to-br",
+                      "p-3 rounded-xl text-white shadow-lg bg-linear-to-br",
                       getFileColor(selectedFile.type)
                     )}>
                       {getFileIcon(selectedFile.type)}
@@ -293,7 +281,7 @@ export function UploadResourceDialog({
                         <div className="mt-2">
                           <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                             <div 
-                              className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300"
+                              className="h-full bg-linear-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300"
                               style={{ width: `${uploadProgress}%` }}
                             />
                           </div>
@@ -351,7 +339,7 @@ export function UploadResourceDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={handleClose}
                 disabled={isLoading}
                 className="rounded-xl border-slate-200"
               >
@@ -360,7 +348,7 @@ export function UploadResourceDialog({
               <Button
                 type="submit"
                 disabled={isLoading || !selectedFile}
-                className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/25 min-w-[140px]"
+                className="rounded-xl bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/25 min-w-[140px]"
               >
                 {isLoading ? (
                   <>
@@ -376,7 +364,6 @@ export function UploadResourceDialog({
               </Button>
             </div>
           </form>
-      </DialogContent>
-    </Dialog>
+      </div>
   );
 }
