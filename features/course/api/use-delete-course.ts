@@ -1,6 +1,5 @@
 import { client } from "@/lib/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 // Tipos inferidos automáticamente desde la ruta del servidor
 type DeleteCourseEndpoint = (typeof client.api.admin.course)[":id"]["$delete"];
@@ -16,6 +15,7 @@ export function useDeleteCourse() {
     data,
     error,
     mutate: deleteCourse,
+    mutateAsync: deleteCourseAsync,
     isPending: isDeletingCourse,
   } = useMutation<SuccessResponse, Error, string>({
     mutationFn: async (id) => {
@@ -36,15 +36,11 @@ export function useDeleteCourse() {
       return successData;
     },
     onSuccess: (_, id) => {
-      toast.success("Curso eliminado exitosamente");
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", id] });
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Error al eliminar el curso");
-    },
   });
 
-  return { data, error, deleteCourse, isDeletingCourse };
+  return { data, error, deleteCourse, deleteCourseAsync, isDeletingCourse };
 }
 
