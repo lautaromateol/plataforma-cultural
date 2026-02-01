@@ -1,6 +1,5 @@
 import { client } from "@/lib/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 // Tipos inferidos automáticamente desde la ruta del servidor
 type DeleteSubjectEndpoint = (typeof client.api.admin.subject)[":id"]["$delete"];
@@ -16,6 +15,7 @@ export function useDeleteSubject() {
     data,
     error,
     mutate: deleteSubject,
+    mutateAsync: deleteSubjectAsync,
     isPending: isDeletingSubject,
   } = useMutation<SuccessResponse, Error, string>({
     mutationFn: async (id) => {
@@ -36,15 +36,11 @@ export function useDeleteSubject() {
       return successData;
     },
     onSuccess: (_, id) => {
-      toast.success("Materia eliminada exitosamente");
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
       queryClient.invalidateQueries({ queryKey: ["subject", id] });
     },
-    onError: (error: Error) => {
-      toast.error(error.message || "Error al eliminar la materia");
-    },
   });
 
-  return { data, error, deleteSubject, isDeletingSubject };
+  return { data, error, deleteSubject, deleteSubjectAsync, isDeletingSubject };
 }
 
