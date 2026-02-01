@@ -5,7 +5,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { createCourseSchema, updateCourseSchema } from "../schemas"
+import { Course, createCourseSchema, updateCourseSchema } from "../schemas"
 import { useCreateCourse } from "../api/use-create-course"
 import { useUpdateCourse } from "../api/use-update-course"
 import { useGetYears } from "@/features/year/api/use-get-years"
@@ -34,39 +34,21 @@ import { Loader2, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "sonner"
 
-type Year = {
-  id: string
-  level: number
-  name: string
-  description?: string
-}
-
-type Course = {
-  id: string
-  name: string
-  academicYear: string
-  capacity: number
-  classroom?: string
-  yearId: string
-}
-
 interface CourseFormProps {
   initialData?: Course
   onSuccess?: () => void
 }
 
-// Usar el tipo de output del schema para que capacity sea requerido
-type CourseFormData = z.output<typeof createCourseSchema>
+type CourseFormData = z.infer<typeof createCourseSchema> | z.infer<typeof updateCourseSchema>
 
 export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
   const isEdit = !!initialData
   const { years, isPending: isLoadingYears } = useGetYears()
 
-  // Usar el schema apropiado basado en si estamos editando o creando
   const schema = isEdit ? updateCourseSchema : createCourseSchema
 
   const form = useForm<CourseFormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       name: initialData?.name ?? "",
       academicYear: initialData?.academicYear ?? new Date().getFullYear().toString(),
@@ -94,14 +76,11 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
   async function onSubmit(data: CourseFormData) {
     try {
       if (isEdit) {
-        // En edición, excluir yearId ya que está deshabilitado y no debe cambiar
-        const { yearId, ...updateData } = data
-        console.log("Data a enviar (edición):", updateData)
-        await updateCourseAsync({ id: initialData.id, data: updateData as any })
+        const { yearId, ...updateData } = data as z.infer<typeof createCourseSchema>
+        await updateCourseAsync({ id: initialData!.id, data: updateData as any })
         toast.success("Curso actualizado exitosamente")
       } else {
-        console.log("Data a enviar (creación):", data)
-        await createCourseAsync(data)
+        await createCourseAsync(data as any)
         toast.success("Curso creado exitosamente")
       }
       form.reset()

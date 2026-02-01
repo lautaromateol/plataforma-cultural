@@ -17,3 +17,7 @@ export const updateCourseSchema = z.object({
   classroom: z.string().optional(),
   yearId: z.any().optional(), // Acepta cualquier valor sin validar
 });
+
+export type Course = z.infer<typeof createCourseSchema> & {
+  id: string;
+};
