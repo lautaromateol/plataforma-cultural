@@ -157,16 +157,21 @@ const app = new Hono()
       });
 
       const students = dbStudents.map((student) => {
+        // Si se solicitó un yearId, preferimos la matrícula que pertenezca a ese año.
+        const chosenEnrollment = yearId
+          ? student.enrollments.find((e) => e.course.yearId === yearId) || student.enrollments[0]
+          : student.enrollments[0];
+
         return {
           id: student.id,
           dni: student.dni,
           email: student.email,
           name: student.name,
           studentProfile: student.studentProfile,
-          courseId: student.enrollments[0].course.id,
-          courseName: student.enrollments[0].course.name,
-          yearId: student.enrollments[0].course.yearId,
-          enrollmentStatus: student.enrollments[0].status
+          courseId: chosenEnrollment?.course.id ?? null,
+          courseName: chosenEnrollment?.course.name ?? null,
+          yearId: chosenEnrollment?.course.yearId ?? null,
+          enrollmentStatus: chosenEnrollment?.status ?? null,
         };
       });
       return c.json({ students }, 200);
