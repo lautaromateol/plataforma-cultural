@@ -5,7 +5,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { createCourseSchema } from "../schemas"
+import { createCourseSchema, updateCourseSchema } from "../schemas"
 import { useCreateCourse } from "../api/use-create-course"
 import { useUpdateCourse } from "../api/use-update-course"
 import { useGetYears } from "@/features/year/api/use-get-years"
@@ -62,8 +62,11 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
   const isEdit = !!initialData
   const { years, isPending: isLoadingYears } = useGetYears()
 
+  // Usar el schema apropiado basado en si estamos editando o creando
+  const schema = isEdit ? updateCourseSchema : createCourseSchema
+
   const form = useForm<CourseFormData>({
-    resolver: zodResolver(createCourseSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       name: initialData?.name ?? "",
       academicYear: initialData?.academicYear ?? new Date().getFullYear().toString(),
@@ -91,9 +94,13 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
   async function onSubmit(data: CourseFormData) {
     try {
       if (isEdit) {
-        await updateCourseAsync({ id: initialData.id, data })
+        // En edición, excluir yearId ya que está deshabilitado y no debe cambiar
+        const { yearId, ...updateData } = data
+        console.log("Data a enviar (edición):", updateData)
+        await updateCourseAsync({ id: initialData.id, data: updateData as any })
         toast.success("Curso actualizado exitosamente")
       } else {
+        console.log("Data a enviar (creación):", data)
         await createCourseAsync(data)
         toast.success("Curso creado exitosamente")
       }
