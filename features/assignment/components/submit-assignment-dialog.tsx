@@ -196,7 +196,7 @@ export function SubmitAssignmentDialog({
       <DialogContent className="sm:max-w-[540px] rounded-3xl border-0 shadow-2xl">
         <DialogHeader className="pb-2">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+            <div className="p-3 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
               <Cloud className="w-6 h-6" />
             </div>
             <div>
@@ -275,7 +275,7 @@ export function SubmitAssignmentDialog({
                   <div className="flex items-center gap-4">
                     <div
                       className={cn(
-                        "flex-shrink-0 p-3 rounded-xl text-white shadow-lg bg-gradient-to-br",
+                        "shrink-0 p-3 rounded-xl text-white shadow-lg bg-linear-to-br",
                         getFileColor(selectedFile.type)
                       )}
                     >
@@ -292,7 +292,7 @@ export function SubmitAssignmentDialog({
                         <div className="mt-2">
                           <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300"
+                              className="h-full bg-linear-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300"
                               style={{ width: `${uploadProgress}%` }}
                             />
                           </div>
@@ -332,7 +332,7 @@ export function SubmitAssignmentDialog({
             <Button
               type="submit"
               disabled={isLoading || !selectedFile}
-              className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/25 min-w-[140px]"
+              className="rounded-xl bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/25 min-w-[140px]"
             >
               {isLoading ? (
                 <>
