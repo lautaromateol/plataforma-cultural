@@ -96,54 +96,54 @@ export function CampusHeader({ user }: CampusHeaderProps) {
           {/* Notifications & User Menu */}
           <div className="flex items-center gap-2">
             <NotificationsDropdown userRole={user.role} />
-            
+
             <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="flex items-center gap-3 h-auto py-2 px-3 hover:bg-slate-100 rounded-xl"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-sm font-medium leading-none">
-                      {user.name}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <Badge className={`text-xs ${roleBadge.className}`}>
-                        <RoleIcon className="w-3 h-3 mr-1" />
-                        {roleBadge.label}
-                      </Badge>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-3 h-auto py-2 px-3 hover:bg-slate-100 rounded-xl"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-sm font-medium leading-none">
+                        {user.name}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <Badge className={`text-xs ${roleBadge.className}`}>
+                          <RoleIcon className="w-3 h-3 mr-1" />
+                          {roleBadge.label}
+                        </Badge>
+                      </div>
                     </div>
+                    <Avatar className="h-10 w-10 border-2 border-white shadow-md">
+                      <AvatarFallback className="bg-linear-to-br from-blue-500 to-indigo-600 text-white font-semibold">
+                        {getInitials(user.name)}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
-                  <Avatar className="h-10 w-10 border-2 border-white shadow-md">
-                    <AvatarFallback className="bg-linear-to-br from-blue-500 to-indigo-600 text-white font-semibold">
-                      {getInitials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 p-2">
-              <DropdownMenuItem
-                onClick={() => router.push(`campus/usuario/${user.id}`)}
-                disabled={isLoggingOut}
-                className="text-indigo-600 focus:text-indigo-600 focus:bg-indigo-50 cursor-pointer"
-              >
-                <ArrowUpRightFromSquare className="mr-2 h-4 w-4" />
-                Ir al perfil
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => logout()}
-                disabled={isLoggingOut}
-                className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                {isLoggingOut ? "Cerrando sesión..." : "Cerrar Sesión"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 p-2">
+                <DropdownMenuItem
+                  onClick={() => router.push(`/campus/usuario/${user.id}`)}
+                  disabled={isLoggingOut}
+                  className="text-indigo-600 focus:text-indigo-600 focus:bg-indigo-50 cursor-pointer"
+                >
+                  <ArrowUpRightFromSquare className="mr-2 h-4 w-4" />
+                  Ir al perfil
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => logout()}
+                  disabled={isLoggingOut}
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  {isLoggingOut ? "Cerrando sesión..." : "Cerrar Sesión"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
