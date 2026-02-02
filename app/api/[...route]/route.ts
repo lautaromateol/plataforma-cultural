@@ -15,6 +15,7 @@ import quiz from "@/features/quiz/server/route";
 import assignment from "@/features/assignment/server/route";
 import notification from "@/features/notification/server/route";
 import announcement from "@/features/announcement/server/route";
+import userProfile from "@/features/user-profile/server/route";
 import "./types.ts";
 
 const app = new Hono().basePath("/api")
@@ -27,6 +28,7 @@ const app = new Hono().basePath("/api")
   .route("/assignment", assignment)
   .route("/notification", notification)
   .route("/announcement", announcement)
+  .route("/profile", userProfile)
   .route("/admin/academic-year", year)
   .route("/admin/subject", subject)
   .route("/admin/course", course)

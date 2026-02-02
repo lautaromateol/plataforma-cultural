@@ -1,12 +1,10 @@
 "use client";
-
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -20,21 +18,19 @@ import {
   User,
   ChevronDown,
   BookOpen,
+  ArrowUpRightFromSquare,
 } from "lucide-react";
-
-type UserInfo = {
-  id: string;
-  name: string;
-  email: string | null;
-  dni: string;
-  role: UserRole;
-};
+import { useRouter } from "next/navigation";
+import { CampusUser } from "@/features/user/schemas";
 
 interface CampusHeaderProps {
-  user: UserInfo;
+  user: CampusUser;
 }
 
 export function CampusHeader({ user }: CampusHeaderProps) {
+
+  const router = useRouter()
+
   const { logout, isLoggingOut } = useLogout();
 
   const getInitials = (name: string) => {
@@ -82,13 +78,13 @@ export function CampusHeader({ user }: CampusHeaderProps) {
           {/* Logo & Brand */}
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
               <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-linear-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
                 Campus Virtual
               </h1>
               <p className="text-xs text-muted-foreground -mt-0.5">
@@ -120,7 +116,7 @@ export function CampusHeader({ user }: CampusHeaderProps) {
                     </div>
                   </div>
                   <Avatar className="h-10 w-10 border-2 border-white shadow-md">
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold">
+                    <AvatarFallback className="bg-linear-to-br from-blue-500 to-indigo-600 text-white font-semibold">
                       {getInitials(user.name)}
                     </AvatarFallback>
                   </Avatar>
@@ -129,15 +125,14 @@ export function CampusHeader({ user }: CampusHeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 p-2">
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-2">
-                  <p className="text-sm font-medium">{user.name}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    DNI: {user.dni}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => router.push(`campus/usuario/${user.id}`)}
+                disabled={isLoggingOut}
+                className="text-indigo-600 focus:text-indigo-600 focus:bg-indigo-50 cursor-pointer"
+              >
+                <ArrowUpRightFromSquare className="mr-2 h-4 w-4" />
+                Ir al perfil
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => logout()}
