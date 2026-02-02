@@ -211,6 +211,50 @@ const app = new Hono()
               subject: true,
             },
           },
+          quizAttempts: {
+            include: {
+              quiz: {
+                include: {
+                  subject: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: { submittedAt: "desc" },
+          },
+          assignmentSubmissions: {
+            include: {
+              assignment: {
+                include: {
+                  assignmentCourseSubjects: {
+                    include: {
+                      courseSubject: {
+                        include: {
+                          subject: {
+                            select: {
+                              id: true,
+                              name: true,
+                            },
+                          },
+                          course: {
+                            select: {
+                              id: true,
+                              name: true,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: { submittedAt: "desc" },
+          },
         },
       });
 
