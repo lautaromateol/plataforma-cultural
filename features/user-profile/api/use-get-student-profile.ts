@@ -12,12 +12,12 @@ type ErrorResponse = Extract<GetStudentProfileJson, { message: string }>;
 // Tipo exportado para uso en componentes
 export type StudentProfileData = NonNullable<SuccessResponse["profile"]>;
 
-export function useGetStudentProfile(studentId: string) {
+export function useGetStudentProfile(userId: string) {
   const query = useQuery<StudentProfileData | undefined, Error>({
-    queryKey: ["student-profile", studentId],
+    queryKey: ["student-profile", userId],
     queryFn: async () => {
       const response = await client.api.profile[":id"].$get({
-        param: { id: studentId },
+        param: { id: userId },
       });
 
       const jsonData = (await response.json()) as unknown as GetStudentProfileJson;
@@ -34,7 +34,7 @@ export function useGetStudentProfile(studentId: string) {
       const successData = jsonData as unknown as SuccessResponse;
       return successData.profile;
     },
-    enabled: !!studentId,
+    enabled: !!userId,
   });
 
   return {
