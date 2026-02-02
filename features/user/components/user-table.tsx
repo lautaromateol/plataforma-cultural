@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import {
   ColumnDef,
   flexRender,
@@ -42,6 +43,7 @@ import {
   Users as UsersIcon,
   ShieldCheck,
   X,
+  Eye,
 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -63,6 +65,7 @@ type UserData = {
 }
 
 export function UserTable({ onEdit, onCreate }: UserTableProps) {
+  const router = useRouter()
   const [roleFilter, setRoleFilter] = React.useState<
     "STUDENT" | "TEACHER" | "ADMIN" | ""
   >("")
@@ -209,6 +212,14 @@ export function UserTable({ onEdit, onCreate }: UserTableProps) {
         const user = row.original
         return (
           <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/admin/usuario/${user.id}`)}
+              title="Ver detalles"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
             <Button
               variant="outline"
               size="sm"
