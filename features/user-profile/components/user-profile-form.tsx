@@ -92,43 +92,47 @@ export function UserProfileForm({ userId, profile, setIsEditMode }: UserProfileF
                     )}
                 />
 
-                <FormField
-                    control={form.control}
-                    name="guardianName"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nombre del Responsable</FormLabel>
-                            <FormControl>
-                                <Input
-                                    placeholder="Nombre del responsable"
-                                    disabled={isUpdatingStudentProfile}
-                                    {...field}
-                                    value={field.value ?? ""}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                {profile?.role === "STUDENT" &&
+                    <>
+                        <FormField
+                            control={form.control}
+                            name="guardianName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nombre del Responsable</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Nombre del responsable"
+                                            disabled={isUpdatingStudentProfile}
+                                            {...field}
+                                            value={field.value ?? ""}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
-                <FormField
-                    control={form.control}
-                    name="guardianPhone"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Teléfono del Responsable</FormLabel>
-                            <FormControl>
-                                <Input
-                                    placeholder="Teléfono del responsable"
-                                    disabled={isUpdatingStudentProfile}
-                                    {...field}
-                                    value={field.value ?? ""}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                        <FormField
+                            control={form.control}
+                            name="guardianPhone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Teléfono del Responsable</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Teléfono del responsable"
+                                            disabled={isUpdatingStudentProfile}
+                                            {...field}
+                                            value={field.value ?? ""}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </>
+                }
 
                 <Button type="submit" disabled={isUpdatingStudentProfile || !form.formState.isDirty}>
                     {isUpdatingStudentProfile ? "Actualizando..." : "Actualizar Perfil"}

@@ -45,7 +45,7 @@ export default function UserPage() {
       <header className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h3 className="font-semibold text-2xl">Perfil del estudiante</h3>
+            <h3 className="font-semibold text-2xl">Perfil del {profile.role === "STUDENT" ? "estudiante" : "profesor"}</h3>
             <p className="text-lg font-light">
               Información personal y datos de contacto
             </p>

@@ -41,25 +41,31 @@ export function UserProfileData({ profile }: {
                     icon={<Cake />}
                 />
             </div>
-            <div className="flex items-center gap-2 mb-6">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    {"Información de contacto"}
-                </span>
-                <div className="h-px flex-1 bg-border" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InfoCard
-                    label="Nombre del tutor"
-                    value={profile.guardianName || "No proporcionado"}
-                    icon={<User />}
-                />
-                <InfoCard
-                    label="Telefono del tutor"
-                    value={profile.guardianPhone || "No proporcionado"}
-                    icon={<Phone />}
-                />
-            </div>
+            {
+                profile.role === "STUDENT" && (
+                    <>
+                        <div className="flex items-center gap-2 mb-6">
+                            <div className="h-px flex-1 bg-border" />
+                            <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                                {"Información de contacto"}
+                            </span>
+                            <div className="h-px flex-1 bg-border" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <InfoCard
+                                label="Nombre del tutor"
+                                value={profile.guardianName || "No proporcionado"}
+                                icon={<User />}
+                            />
+                            <InfoCard
+                                label="Telefono del tutor"
+                                value={profile.guardianPhone || "No proporcionado"}
+                                icon={<Phone />}
+                            />
+                        </div>
+                    </>
+                )
+            }
         </>
     )
 }

@@ -17,6 +17,7 @@ const app = new Hono()
           name: true,
           email: true,
           dni: true,
+          role: true,
           studentProfile: true
         },
       });
@@ -30,6 +31,7 @@ const app = new Hono()
         name: student.name,
         email: student.email,
         dni: student.dni,
+        role: student.role,
         birthDate: student.studentProfile?.birthDate || null,
         phone: student.studentProfile?.phone || null,
         guardianName: student.studentProfile?.guardianName || null,
