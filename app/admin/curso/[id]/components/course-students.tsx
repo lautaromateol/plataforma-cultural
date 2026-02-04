@@ -21,7 +21,7 @@ export function CourseStudents({ course }: CourseStudentsProps) {
     >
       <StudentsTable
         courseId={course.id}
-        yearId={course.yearId}
+        levelId={course.levelId}
         data={enrollments ?? []}
       />
     </CourseSection>

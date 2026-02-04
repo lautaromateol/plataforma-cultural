@@ -1,15 +1,15 @@
 import { YearSection } from "./year-section";
 import { TeachersTable } from "./teachers-table";
 import { useGetTeachers } from "@/features/user/api/use-get-teachers";
-import { Year } from "@/features/year/schemas";
+import { Level } from "@/features/level/schemas";
 
-export function YearTeachers({ year }: { year: Year }) {
-  const { teachers, isPending, error } = useGetTeachers({ yearId: year.id });
+export function LevelTeachers({ level }: { level: Level }) {
+  const { teachers, isPending, error } = useGetTeachers({ levelId: level.id });
 
   return (
     <YearSection
       title="Profesores"
-      yearName={year.name}
+      yearName={level.name}
       isPending={isPending}
       error={error}
     >

@@ -14,18 +14,24 @@ const app = new Hono()
   })
   .get("/", async (c) => {
     const prisma = c.get("prisma");
-    const { yearId } = c.req.query();
+    const { levelId } = c.req.query();
 
-    const where = {}
-    if (yearId) {
-      Object.assign(where, { yearId });
+    const where = {};
+    if (levelId) {
+      Object.assign(where, { levelId });
     }
 
     try {
       const subjects = await prisma.subject.findMany({
         where,
         include: {
-          year: true,
+          level: {
+            include: {
+              studyPlan: {
+                select: { id: true, name: true, code: true },
+              },
+            },
+          },
           courseSubjects: {
             include: {
               course: true,
@@ -52,7 +58,13 @@ const app = new Hono()
       const subject = await prisma.subject.findUnique({
         where: { id },
         include: {
-          year: true,
+          level: {
+            include: {
+              studyPlan: {
+                select: { id: true, name: true, code: true },
+              },
+            },
+          },
           courseSubjects: {
             include: {
               course: true,
@@ -87,10 +99,10 @@ const app = new Hono()
     async (c) => {
       const prisma = c.get("prisma");
       const data = c.req.valid("json");
-      const { yearId } = c.req.query();
+      const { levelId } = c.req.query();
 
-      if (!yearId) {
-        return c.json({ message: "ID del año requerido" }, 400);
+      if (!levelId) {
+        return c.json({ message: "ID del nivel requerido" }, 400);
       }
 
       try {
@@ -98,16 +110,16 @@ const app = new Hono()
         const subject = await prisma.subject.create({
           data: {
             ...data,
-            yearId,
+            levelId,
           },
         });
 
-        // Obtener todos los cursos del año
+        // Obtener todos los cursos del nivel
         const courses = await prisma.course.findMany({
-          where: { yearId },
+          where: { levelId },
         });
 
-        // Crear CourseSubject para cada curso del año
+        // Crear CourseSubject para cada curso del nivel
         if (courses.length > 0) {
           await prisma.courseSubject.createMany({
             data: courses.map((course) => ({

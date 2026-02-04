@@ -11,14 +11,55 @@ const app = new Hono()
     const { subjectId } = c.req.param();
 
     try {
-      // Verificar que la materia existe y el usuario tiene acceso
+      // Verificar que la materia existe
+      const subject = await prisma.subject.findUnique({
+        where: { id: subjectId },
+        include: {
+          level: true,
+          courseSubjects: user.role === "TEACHER" ? {
+            where: { teacherId: user.sub },
+          } : undefined,
+        },
+      });
+
+      if (!subject) {
+        return c.json({ message: "Materia no encontrada" }, 404);
+      }
+
+      let hasAccess = false;
+      if (user.role === "ADMIN") {
+        hasAccess = true;
+      } else if (user.role === "TEACHER") {
+        hasAccess = (subject.courseSubjects?.length ?? 0) > 0;
+      } else if (user.role === "STUDENT") {
+        // Verificar si el estudiante está inscrito en un curso del mismo nivel que la materia
+        const enrollment = await prisma.enrollment.findFirst({
+          where: {
+            studentId: user.sub,
+            status: "ACTIVE",
+            course: {
+              levelId: subject.level.id,
+            },
+          },
+        });
+        hasAccess = !!enrollment;
+      }
+
+      if (!hasAccess) {
+        return c.json(
+          { message: "No tienes permiso para ver esta materia" },
+          403
+        );
+      }
+
+      // Obtener cursos de la materia
       const courseSubjects = await prisma.courseSubject.findMany({
         where: { subjectId },
         include: {
           course: {
             include: {
-              enrollments: {
-                where: { status: "ACTIVE", studentId: user.sub },
+              _count: {
+                select: { enrollments: { where: { status: "ACTIVE" } } },
               },
             },
           },
@@ -32,31 +73,6 @@ const app = new Hono()
         },
       });
 
-      if (courseSubjects.length === 0 && user.role !== "ADMIN") {
-        const subjectExists = await prisma.subject.findUnique({
-          where: { id: subjectId },
-        });
-        if (!subjectExists) {
-          return c.json({ message: "Materia no encontrada" }, 404);
-        }
-      }
-
-      let hasAccess = false;
-      if (user.role === "ADMIN") {
-        hasAccess = true;
-      } else if (user.role === "TEACHER") {
-        hasAccess = courseSubjects.some((cs) => cs.teacherId === user.sub);
-      } else if (user.role === "STUDENT") {
-        hasAccess = courseSubjects.some((cs) => cs.course.enrollments.length > 0);
-      }
-
-      if (!hasAccess) {
-        return c.json(
-          { message: "No tienes permiso para ver esta materia" },
-          403
-        );
-      }
-
       // Mapear cursos
       const courses = courseSubjects.map((cs) => ({
         id: cs.course.id,
@@ -64,7 +80,7 @@ const app = new Hono()
         name: cs.course.name,
         classroom: cs.course.classroom,
         schedule: cs.schedule,
-        studentsCount: cs.course.enrollments.length,
+        studentsCount: cs.course._count.enrollments,
         teacher: cs.teacher,
       }));
 

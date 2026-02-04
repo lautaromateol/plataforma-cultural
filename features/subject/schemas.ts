@@ -33,6 +33,6 @@ export type Subject = {
   name: string;
   createdAt: string;
   updatedAt: string;
-  yearId: string;
+  levelId: string;
   description: string | null;
 }

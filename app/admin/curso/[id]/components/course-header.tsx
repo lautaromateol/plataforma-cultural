@@ -41,10 +41,10 @@ export function CourseHeader({ course }: CourseHeaderProps) {
           </Badge>
         </div>
         <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
-          {course.year && (
+          {course.level && (
             <div className="flex items-center gap-1.5">
               <GraduationCap className="h-4 w-4" />
-              <span>{course.year.name}</span>
+              <span>{course.level.name}</span>
             </div>
           )}
           <div className="flex items-center gap-1.5">

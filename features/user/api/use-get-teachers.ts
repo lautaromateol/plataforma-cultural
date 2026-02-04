@@ -12,15 +12,15 @@ type ErrorResponse = Extract<GetTeachersJson, { message: string }>;
 // Tipo exportado para uso en componentes
 export type Teacher = NonNullable<SuccessResponse["teachers"]>[number];
 type UseGetTeachersParams = {
-  yearId?: string;
+  levelId?: string;
 };
 
 export function useGetTeachers(params?: UseGetTeachersParams) {
   const query = useQuery<Teacher[], Error>({
-    queryKey: ["teachers", params?.yearId],
+    queryKey: ["teachers", params?.levelId],
     queryFn: async () => {
       const response = await client.api.admin.users.teachers.$get({
-        query: { yearId: params?.yearId }
+        query: { levelId: params?.levelId }
       });
 
       const jsonData = (await response.json()) as unknown as GetTeachersJson;

@@ -49,10 +49,10 @@ import { Course } from "@/features/course/api/use-get-courses"
 interface StudentsTableProps {
   data: Student[] | []
   courses: Course[] | []
-  yearId: string
+  levelId: string
 }
 
-export function StudentsTable({ data, courses, yearId }: StudentsTableProps) {
+export function StudentsTable({ data, courses, levelId }: StudentsTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = React.useState("")
@@ -62,8 +62,8 @@ export function StudentsTable({ data, courses, yearId }: StudentsTableProps) {
 
   // Obtener todos los estudiantes del sistema
   const { users: allUsers, isPending: isLoadingUsers } = useGetUsers({ role: "STUDENT" })
-  const { enrollStudentAsync, isEnrolling } = useEnrollStudent({ yearId })
-  const { unenrollStudentAsync, isUnenrolling } = useUnenrollStudent({ yearId })
+  const { enrollStudentAsync, isEnrolling } = useEnrollStudent({ levelId })
+  const { unenrollStudentAsync, isUnenrolling } = useUnenrollStudent({ levelId })
 
   // Filtrar estudiantes no matriculados en este año
   const enrolledStudentIds = new Set(data.map(s => s.id))

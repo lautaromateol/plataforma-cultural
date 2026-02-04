@@ -12,16 +12,16 @@ type ErrorResponse = Extract<GetSubjectsJson, { message: string }>;
 // Tipo exportado para uso en componentes
 export type Subject = NonNullable<SuccessResponse["subjects"]>[number];
 type UseGetSubjectsParams = {
-  yearId?: string;
+  levelId?: string;
 };
 
 export function useGetSubjects(params?: UseGetSubjectsParams) {
   const query = useQuery<Subject[], Error>({
-    queryKey: ["subjects", params?.yearId],
+    queryKey: ["subjects", params?.levelId],
     queryFn: async () => {
       const response = await client.api.admin.subject.$get({
         query: {
-          yearId: params?.yearId,
+          levelId: params?.levelId,
         }
       });
       const jsonData = (await response.json()) as unknown as GetSubjectsJson;

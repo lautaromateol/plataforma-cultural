@@ -96,23 +96,23 @@ export function CourseTable({ onEdit, onCreate }: CourseTableProps) {
       },
     },
     {
-      accessorKey: "year.name",
+      accessorKey: "level.studyPlan.name",
       header: ({ column }) => {
         return (
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Año Escolar
+            Plan
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         )
       },
       cell: ({ row }) => {
-        const year = row.original.year
-        return year ? (
+        const level = row.original.level
+        return level?.studyPlan ? (
           <Badge variant="default">
-            {year.name}
+            {level.studyPlan.name}
           </Badge>
         ) : (
           <span className="text-muted-foreground">—</span>

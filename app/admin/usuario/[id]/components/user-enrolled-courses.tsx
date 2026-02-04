@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { BookOpen, GraduationCap, Calendar, DoorOpen } from "lucide-react"
+import { BookOpen, GraduationCap, Calendar, DoorOpen, Layers } from "lucide-react"
 
 interface UserEnrolledCoursesProps {
   enrollments: any[]
@@ -94,10 +94,16 @@ export function UserEnrolledCourses({ enrollments }: UserEnrolledCoursesProps) {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                          {enrollment.course.year && (
+                          {enrollment.course.level?.studyPlan && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Layers className="h-3.5 w-3.5" />
+                              <span>{enrollment.course.level.studyPlan.name}</span>
+                            </div>
+                          )}
+                          {enrollment.course.level && (
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <BookOpen className="h-3.5 w-3.5" />
-                              <span>{enrollment.course.year.name}</span>
+                              <span>{enrollment.course.level.name}</span>
                             </div>
                           )}
                           {enrollment.course.academicYear && (

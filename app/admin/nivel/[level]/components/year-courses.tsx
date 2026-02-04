@@ -4,34 +4,34 @@ import React from "react"
 import { YearSection } from "./year-section";
 import { CoursesTable } from "./courses-table";
 import { useGetCourses } from "@/features/course/api/use-get-courses";
-import { Year } from "@/features/year/schemas";
+import { Level } from "@/features/level/schemas";
 import { Course } from "@/features/course/api/use-get-courses";
 import { useOpenCourseDialog } from "../hooks/use-open-course-dialog"
 
-export function YearCourses({ year }: { year: Year }) {
-  const { courses, isPending, error } = useGetCourses({ yearId: year.id });
+export function LevelCourses({ level }: { level: Level }) {
+  const { courses, isPending, error } = useGetCourses({ levelId: level.id });
   const { open } = useOpenCourseDialog()
 
   const handleCreate = () => {
-    open(year.id)
+    open(level.id)
   };
 
   const handleEdit = (course: Course) => {
-    open(year.id, course)
+    open(level.id, course)
   };
 
   return (
     <YearSection
       title="Cursos"
-      yearName={year.name}
+      yearName={level.name}
       isPending={isPending}
       error={error}
     >
-      <CoursesTable 
-        data={courses ?? []} 
+      <CoursesTable
+        data={courses ?? []}
         onEdit={handleEdit}
         onCreate={handleCreate}
-        yearId={year.id}
+        levelId={level.id}
       />
     </YearSection>
   );

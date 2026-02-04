@@ -3,18 +3,18 @@ import { Course } from "@/features/course/api/use-get-courses"
 
 interface UseCourseDialogStore {
   isOpen: boolean
-  yearId: string
+  levelId: string
   course: Course | undefined
-  open: (yearId: string, course?: Course) => void
+  open: (levelId: string, course?: Course) => void
   close: () => void
 }
 
 export const useOpenCourseDialog = create<UseCourseDialogStore>((set) => ({
   isOpen: false,
-  yearId: "",
+  levelId: "",
   course: undefined,
-  open: (yearId: string, course?: Course) =>
-    set({ isOpen: true, yearId, course }),
+  open: (levelId: string, course?: Course) =>
+    set({ isOpen: true, levelId, course }),
   close: () =>
-    set({ isOpen: false, yearId: "", course: undefined }),
+    set({ isOpen: false, levelId: "", course: undefined }),
 }))

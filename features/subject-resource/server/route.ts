@@ -18,7 +18,7 @@ const app = new Hono()
       const subject = await prisma.subject.findUnique({
         where: { id: subjectId },
         include: {
-          year: true,
+          level: true,
           courseSubjects: {
             include: {
               course: {
@@ -39,7 +39,7 @@ const app = new Hono()
 
       // Verificar permisos:
       // - Si es profesor, debe estar asignado a la materia en al menos un curso
-      // - Si es estudiante, debe estar matriculado en un curso que tenga esta materia
+      // - Si es estudiante, debe estar matriculado en un curso del mismo nivel que la materia
       // - Si es admin, tiene acceso total
       let hasAccess = false;
 
@@ -51,10 +51,17 @@ const app = new Hono()
         );
         hasAccess = isTeacherOfSubject;
       } else if (user.role === "STUDENT") {
-        const isEnrolled = subject.courseSubjects.some(
-          (cs) => cs.course.enrollments.length > 0
-        );
-        hasAccess = isEnrolled;
+        // Verificar si el estudiante está inscrito en un curso del mismo nivel que la materia
+        const enrollment = await prisma.enrollment.findFirst({
+          where: {
+            studentId: user.sub,
+            status: "ACTIVE",
+            course: {
+              levelId: subject.level.id,
+            },
+          },
+        });
+        hasAccess = !!enrollment;
       }
 
       if (!hasAccess) {

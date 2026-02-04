@@ -11,10 +11,11 @@ type EnrollStudentJson = Awaited<ReturnType<EnrollStudentResponse["json"]>>;
 type SuccessResponse = Extract<EnrollStudentJson, { enrollment?: unknown }>;
 type ErrorResponse = Extract<EnrollStudentJson, { message: string }>;
 type UseEnrollStudentParams = {
-  yearId: string;
+  levelId?: string;
+  studyPlanId?: string;
 }
 
-export function useEnrollStudent(params: UseEnrollStudentParams) {
+export function useEnrollStudent(params: UseEnrollStudentParams = {}) {
   const queryClient = useQueryClient();
 
   const {
@@ -40,8 +41,14 @@ export function useEnrollStudent(params: UseEnrollStudentParams) {
     },
     onSuccess: () => {
       // Invalidar queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ["students", params.yearId] });
+      if (params.levelId) {
+        queryClient.invalidateQueries({ queryKey: ["students", params.levelId] });
+      }
+      if (params.studyPlanId) {
+        queryClient.invalidateQueries({ queryKey: ["study-plan-details", params.studyPlanId] });
+      }
       queryClient.invalidateQueries({ queryKey: ["courses"] });
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
     },
   });
 

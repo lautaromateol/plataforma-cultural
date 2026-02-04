@@ -55,10 +55,17 @@ const app = new Hono()
         )
         hasAccess = isTeacherOfSubject
       } else if (user.role === "STUDENT") {
-        const isEnrolled = subject.courseSubjects.some(
-          (cs) => cs.course.enrollments.length > 0
-        )
-        hasAccess = isEnrolled
+        // Verificar si el estudiante está inscrito en un curso del mismo nivel que la materia
+        const enrollment = await prisma.enrollment.findFirst({
+          where: {
+            studentId: user.sub,
+            status: "ACTIVE",
+            course: {
+              levelId: subject.levelId,
+            },
+          },
+        })
+        hasAccess = !!enrollment
       }
 
       if (!hasAccess) {

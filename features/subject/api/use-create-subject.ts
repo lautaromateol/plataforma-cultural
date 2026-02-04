@@ -19,11 +19,11 @@ export function useCreateSubject() {
     mutate: createSubject,
     mutateAsync: createSubjectAsync,
     isPending: isCreatingSubject,
-  } = useMutation<SuccessResponse, Error, { data: RequestType; yearId: string }>({
-    mutationFn: async ({ data: json, yearId }) => {
+  } = useMutation<SuccessResponse, Error, { data: RequestType; levelId: string }>({
+    mutationFn: async ({ data: json, levelId }) => {
       const response = await (client.api.admin.subject.$post as any)({
         json,
-        query: { yearId },
+        query: { levelId },
       });
 
       const jsonData = (await response.json()) as unknown as CreateSubjectJson;
@@ -38,9 +38,9 @@ export function useCreateSubject() {
       const successData = jsonData as unknown as SuccessResponse;
       return successData;
     },
-    onSuccess: (_, { yearId }) => {
+    onSuccess: (_, { levelId }) => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
-      queryClient.invalidateQueries({ queryKey: ["subjects", yearId] });
+      queryClient.invalidateQueries({ queryKey: ["subjects", levelId] });
       queryClient.invalidateQueries({ queryKey: ["course-subjects"] });
       queryClient.invalidateQueries({ queryKey: ["course"] });
     },

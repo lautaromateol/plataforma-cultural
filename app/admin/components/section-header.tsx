@@ -17,11 +17,11 @@ interface SectionHeaderProps {
 }
 
 const sectionConfig = {
-  years: {
-    title: "Años Escolares",
-    description: "Gestiona los niveles educativos del sistema",
+  planes: {
+    title: "Planes de Estudio",
+    description: "Gestiona los planes de estudio y sus niveles",
     icon: Calendar,
-    statKey: "yearsCount" as const,
+    statKey: "studyPlansCount" as const,
     color: "text-blue-600",
     bgColor: "bg-blue-50",
   },

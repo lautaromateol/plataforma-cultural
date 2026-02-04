@@ -3,18 +3,18 @@ import { Subject } from "@/features/subject/api/use-get-subjects"
 
 interface UseSubjectDialogStore {
   isOpen: boolean
-  yearId: string
+  levelId: string
   subject: Subject | undefined
-  open: (yearId: string, subject?: Subject) => void
+  open: (levelId: string, subject?: Subject) => void
   close: () => void
 }
 
 export const useOpenSubjectDialog = create<UseSubjectDialogStore>((set) => ({
   isOpen: false,
-  yearId: "",
+  levelId: "",
   subject: undefined,
-  open: (yearId: string, subject?: Subject) =>
-    set({ isOpen: true, yearId, subject }),
+  open: (levelId: string, subject?: Subject) =>
+    set({ isOpen: true, levelId, subject }),
   close: () =>
-    set({ isOpen: false, yearId: "", subject: undefined }),
+    set({ isOpen: false, levelId: "", subject: undefined }),
 }))

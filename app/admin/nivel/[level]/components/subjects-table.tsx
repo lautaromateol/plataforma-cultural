@@ -41,10 +41,10 @@ interface SubjectsTableProps {
   data: Subject[]
   onEdit: (subject: Subject) => void
   onCreate: () => void
-  yearId: string
+  levelId: string
 }
 
-export function SubjectsTable({ data, onEdit, onCreate, yearId }: SubjectsTableProps) {
+export function SubjectsTable({ data, onEdit, onCreate, levelId }: SubjectsTableProps) {
   const { deleteSubjectAsync, isDeletingSubject } = useDeleteSubject()
   const [subjectToDelete, setSubjectToDelete] = React.useState<Subject | null>(null)
 

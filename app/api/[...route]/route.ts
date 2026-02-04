@@ -2,7 +2,8 @@ import { Hono } from "hono";
 import { handle } from "hono/vercel";
 import withPrisma from "@/lib/prisma";
 import auth from "@/features/auth/server/route";
-import year from "@/features/year/server/route";
+import studyPlan from "@/features/study-plan/server/route";
+import level from "@/features/level/server/route";
 import subject from "@/features/subject/server/route";
 import course from "@/features/course/server/route";
 import courseSubject from "@/features/course-subject/server/route";
@@ -16,6 +17,7 @@ import assignment from "@/features/assignment/server/route";
 import notification from "@/features/notification/server/route";
 import announcement from "@/features/announcement/server/route";
 import userProfile from "@/features/user-profile/server/route";
+import grades from "@/features/grades/server/route";
 import "./types.ts";
 
 const app = new Hono().basePath("/api")
@@ -29,7 +31,9 @@ const app = new Hono().basePath("/api")
   .route("/notification", notification)
   .route("/announcement", announcement)
   .route("/profile", userProfile)
-  .route("/admin/academic-year", year)
+  .route("/grades", grades)
+  .route("/admin/study-plan", studyPlan)
+  .route("/admin/level", level)
   .route("/admin/subject", subject)
   .route("/admin/course", course)
   .route("/admin/course-subject", courseSubject)

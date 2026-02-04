@@ -8,7 +8,7 @@ import { z } from "zod"
 import { Course, createCourseSchema, updateCourseSchema } from "../schemas"
 import { useCreateCourse } from "../api/use-create-course"
 import { useUpdateCourse } from "../api/use-update-course"
-import { useGetYears } from "@/features/year/api/use-get-years"
+import { useGetLevels } from "@/features/level/api/use-get-levels"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -43,7 +43,7 @@ type CourseFormData = z.infer<typeof createCourseSchema> | z.infer<typeof update
 
 export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
   const isEdit = !!initialData
-  const { years, isPending: isLoadingYears } = useGetYears()
+  const { levels, isPending: isLoadingLevels } = useGetLevels()
 
   const schema = isEdit ? updateCourseSchema : createCourseSchema
 
@@ -54,7 +54,7 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
       academicYear: initialData?.academicYear ?? new Date().getFullYear().toString(),
       capacity: initialData?.capacity ?? 30,
       classroom: initialData?.classroom ?? "",
-      yearId: initialData?.yearId ?? "",
+      levelId: initialData?.levelId ?? "",
     },
   })
 
@@ -65,7 +65,7 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
         academicYear: initialData.academicYear ?? new Date().getFullYear().toString(),
         capacity: initialData.capacity ?? 30,
         classroom: initialData.classroom ?? "",
-        yearId: initialData.yearId ?? "",
+        levelId: initialData.levelId ?? "",
       })
     }
   }, [initialData, form])
@@ -76,7 +76,7 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
   async function onSubmit(data: CourseFormData) {
     try {
       if (isEdit) {
-        const { yearId, ...updateData } = data as z.infer<typeof createCourseSchema>
+        const { levelId, ...updateData } = data as z.infer<typeof createCourseSchema>
         await updateCourseAsync({ id: initialData!.id, data: updateData as any })
         toast.success("Curso actualizado exitosamente")
       } else {
@@ -94,7 +94,7 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
 
   const isPending = isCreatingCourse || isUpdatingCourse
 
-  if (isLoadingYears) {
+  if (isLoadingLevels) {
     return (
       <Card>
         <CardContent className="pt-6">
@@ -106,7 +106,7 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
     )
   }
 
-  if (!years || years.length === 0) {
+  if (!levels || levels.length === 0) {
     return (
       <Card>
         <CardContent className="pt-6">
@@ -114,8 +114,8 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Atención</AlertTitle>
             <AlertDescription>
-              No hay años escolares disponibles. Debes crear al menos un año
-              escolar antes de crear cursos.
+              No hay niveles disponibles. Debes crear al menos un nivel
+              antes de crear cursos.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -140,19 +140,19 @@ export function CourseForm({ initialData, onSuccess }: CourseFormProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="yearId"
+              name="levelId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Año Escolar *</FormLabel>
+                  <FormLabel>Nivel *</FormLabel>
                   <FormControl>
                     <Select
                       {...field}
                       disabled={isPending || isEdit}
-                      placeholder="Selecciona un año escolar"
+                      placeholder="Selecciona un nivel"
                     >
-                      {years.map((year) => (
-                        <SelectItem key={year.id} value={year.id}>
-                          {year.name} (Nivel {year.level})
+                      {levels.map((level) => (
+                        <SelectItem key={level.id} value={level.id}>
+                          {level.name} - {level.studyPlan?.name}
                         </SelectItem>
                       ))}
                     </Select>

@@ -14,16 +14,16 @@ export type Course = NonNullable<SuccessResponse["courses"]>[number];
 
 type UseGetCoursesParams = {
   academicYear?: string;
-  yearId?: string;
+  levelId?: string;
 };
 
 export function useGetCourses(params?: UseGetCoursesParams) {
   const query = useQuery<Course[], Error>({
-    queryKey: ["courses", params?.academicYear, params?.yearId],
+    queryKey: ["courses", params?.academicYear, params?.levelId],
     queryFn: async () => {
       const queryParams: Record<string, string> = {};
       if (params?.academicYear) queryParams.academicYear = params.academicYear;
-      if (params?.yearId) queryParams.yearId = params.yearId;
+      if (params?.levelId) queryParams.levelId = params.levelId;
 
       const response = await client.api.admin.course.$get({
         query: queryParams,

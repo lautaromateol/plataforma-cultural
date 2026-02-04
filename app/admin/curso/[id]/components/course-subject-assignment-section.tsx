@@ -30,7 +30,7 @@ export function CourseSubjectAssignmentSection({
         </CardTitle>
         <CardDescription>
           Gestiona la asignación de profesores a las materias de{" "}
-          {course.year?.name}
+          {course.level?.name}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -49,7 +49,7 @@ export function CourseSubjectAssignmentSection({
             <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold">Sin materias configuradas</h3>
             <p className="text-muted-foreground mt-1 max-w-md">
-              No hay materias registradas para {course.year?.name}. Primero
+              No hay materias registradas para {course.level?.name}. Primero
               debes crear materias en la sección de administración.
             </p>
           </div>

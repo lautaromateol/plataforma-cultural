@@ -1,20 +1,20 @@
 "use client"
 import { useParams } from "next/navigation"
 import { AlertCircle } from "lucide-react"
-import { useGetYearDetails } from "@/features/year/api/use-get-year-details"
+import { useGetLevelDetails } from "@/features/level/api/use-get-level-details"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { YearStats } from "./components/year-stats"
-import { YearCourses } from "./components/year-courses"
-import { YearTeachers } from "./components/year-teachers"
-import { YearSubjects } from "./components/year-subjects"
-import { YearStudents } from "./components/year-students"
+import { LevelStats } from "./components/year-stats"
+import { LevelCourses } from "./components/year-courses"
+import { LevelTeachers } from "./components/year-teachers"
+import { LevelSubjects } from "./components/year-subjects"
+import { LevelStudents } from "./components/year-students"
 
-export default function YearDetailsPage() {
+export default function LevelDetailsPage() {
   const params = useParams()
-  const level = parseInt(params.level as string)
+  const levelId = params.level as string
 
-  const { yearDetails, isPending, error } = useGetYearDetails(level)
+  const { levelDetails, isPending, error } = useGetLevelDetails(levelId)
 
   if (isPending) {
     return (
@@ -43,40 +43,44 @@ export default function YearDetailsPage() {
     )
   }
 
-  if (!yearDetails) {
+  if (!levelDetails) {
     return (
       <div className="container mx-auto py-8">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>No encontrado</AlertTitle>
-          <AlertDescription>No se encontró información para este año escolar</AlertDescription>
+          <AlertDescription>No se encontró información para este nivel</AlertDescription>
         </Alert>
       </div>
     )
   }
 
-  const { year } = yearDetails
+  const { level } = levelDetails
 
   return (
     <div className="container mx-auto py-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">{year.name}</h1>
-        {year.description && (
-          <p className="text-muted-foreground mt-2">{year.description}</p>
+        <h1 className="text-4xl font-bold tracking-tight">{level.name}</h1>
+        {level.studyPlan && (
+          <p className="text-muted-foreground mt-1">
+            Plan: {level.studyPlan.name} ({level.studyPlan.code})
+          </p>
+        )}
+        {level.description && (
+          <p className="text-muted-foreground mt-2">{level.description}</p>
         )}
       </div>
 
-      <YearStats year={year} />
+      <LevelStats level={level} />
 
-      <YearStudents year={year} />
+      <LevelStudents level={level} />
 
-      <YearTeachers year={year} />
+      <LevelTeachers level={level} />
 
-      <YearCourses year={year} />
+      <LevelCourses level={level} />
 
-      <YearSubjects year={year} />
+      <LevelSubjects level={level} />
     </div>
   )
 }
-

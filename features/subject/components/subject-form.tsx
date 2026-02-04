@@ -8,7 +8,7 @@ import { z } from "zod"
 import { createSubjectSchema } from "../schemas"
 import { useCreateSubject } from "../api/use-create-subject"
 import { useUpdateSubject } from "../api/use-update-subject"
-import { useGetYears } from "@/features/year/api/use-get-years"
+import { useGetLevels } from "@/features/level/api/use-get-levels"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -41,12 +41,12 @@ interface SubjectFormProps {
 }
 
 const formSchema = createSubjectSchema.extend({
-  yearId: z.string().min(1, "El año escolar es requerido"),
+  levelId: z.string().min(1, "El nivel es requerido"),
 })
 
 export function SubjectForm({ initialData, onSuccess }: SubjectFormProps) {
   const isEdit = !!initialData
-  const { years, isPending: isLoadingYears } = useGetYears()
+  const { levels, isPending: isLoadingLevels } = useGetLevels()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -54,7 +54,7 @@ export function SubjectForm({ initialData, onSuccess }: SubjectFormProps) {
       name: initialData?.name ?? "",
       code: initialData?.code ?? "",
       description: initialData?.description ?? "",
-      yearId: initialData?.yearId ?? "",
+      levelId: initialData?.levelId ?? "",
     },
   })
 
@@ -64,7 +64,7 @@ export function SubjectForm({ initialData, onSuccess }: SubjectFormProps) {
         name: initialData.name ?? "",
         code: initialData.code ?? "",
         description: initialData.description ?? "",
-        yearId: initialData.yearId ?? "",
+        levelId: initialData.levelId ?? "",
       })
     }
   }, [initialData, form])
@@ -75,12 +75,12 @@ export function SubjectForm({ initialData, onSuccess }: SubjectFormProps) {
   async function onSubmit(data: z.infer<typeof formSchema>) {
     try {
       if (isEdit) {
-        const { yearId, ...subjectData } = data
+        const { levelId, ...subjectData } = data
         await updateSubjectAsync({ id: initialData.id, data: subjectData })
         toast.success("Materia actualizada exitosamente")
       } else {
-        const { yearId, ...subjectData } = data
-        await createSubjectAsync({ data: subjectData, yearId })
+        const { levelId, ...subjectData } = data
+        await createSubjectAsync({ data: subjectData, levelId })
         toast.success("Materia creada exitosamente")
       }
       form.reset()
@@ -94,7 +94,7 @@ export function SubjectForm({ initialData, onSuccess }: SubjectFormProps) {
 
   const isPending = isCreatingSubject || isUpdatingSubject
 
-  if (isLoadingYears) {
+  if (isLoadingLevels) {
     return (
       <Card>
         <CardContent className="pt-6">
@@ -106,7 +106,7 @@ export function SubjectForm({ initialData, onSuccess }: SubjectFormProps) {
     )
   }
 
-  if (!years || years.length === 0) {
+  if (!levels || levels.length === 0) {
     return (
       <Card>
         <CardContent className="pt-6">
@@ -114,8 +114,8 @@ export function SubjectForm({ initialData, onSuccess }: SubjectFormProps) {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Atención</AlertTitle>
             <AlertDescription>
-              No hay años escolares disponibles. Debes crear al menos un año
-              escolar antes de crear materias.
+              No hay niveles disponibles. Debes crear al menos un nivel
+              antes de crear materias.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -140,19 +140,19 @@ export function SubjectForm({ initialData, onSuccess }: SubjectFormProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="yearId"
+              name="levelId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Año Escolar *</FormLabel>
+                  <FormLabel>Nivel *</FormLabel>
                   <FormControl>
                     <Select
                       {...field}
                       disabled={isPending || isEdit}
-                      placeholder="Selecciona un año escolar"
+                      placeholder="Selecciona un nivel"
                     >
-                      {years.map((year: any) => (
-                        <SelectItem key={year.id} value={year.id}>
-                          {year.name} (Nivel {year.level})
+                      {levels.map((level: any) => (
+                        <SelectItem key={level.id} value={level.id}>
+                          {level.name}
                         </SelectItem>
                       ))}
                     </Select>

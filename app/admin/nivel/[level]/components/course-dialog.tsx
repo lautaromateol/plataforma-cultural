@@ -24,7 +24,7 @@ import { useOpenCourseDialog } from "../hooks/use-open-course-dialog"
 type CourseFormData = z.infer<typeof createCourseSchema>
 
 export function CourseForm() {
-  const { isOpen, close, yearId, course: initialData } = useOpenCourseDialog()
+  const { isOpen, close, levelId, course: initialData } = useOpenCourseDialog()
   const isEdit = !!initialData
   const { createCourseAsync, isCreatingCourse } = useCreateCourse()
   const { updateCourseAsync, isUpdatingCourse } = useUpdateCourse()
@@ -36,7 +36,7 @@ export function CourseForm() {
       academicYear: new Date().getFullYear().toString(),
       capacity: 30,
       classroom: "",
-      yearId: "",
+      levelId: "",
     },
   })
 
@@ -47,7 +47,7 @@ export function CourseForm() {
         academicYear: initialData.academicYear ?? new Date().getFullYear().toString(),
         capacity: initialData.capacity ?? 30,
         classroom: initialData.classroom ?? "",
-        yearId,
+        levelId,
       })
     } else {
       form.reset({
@@ -55,10 +55,10 @@ export function CourseForm() {
         academicYear: new Date().getFullYear().toString(),
         capacity: 30,
         classroom: "",
-        yearId,
+        levelId,
       })
     }
-  }, [isOpen, initialData, yearId, form])
+  }, [isOpen, initialData, levelId, form])
 
   const isPending = isCreatingCourse || isUpdatingCourse
 

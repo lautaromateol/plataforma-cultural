@@ -41,10 +41,10 @@ interface CoursesTableProps {
   data: Course[]
   onEdit: (course: Course) => void
   onCreate: () => void
-  yearId: string
+  levelId: string
 }
 
-export function CoursesTable({ data, onEdit, onCreate, yearId }: CoursesTableProps) {
+export function CoursesTable({ data, onEdit, onCreate, levelId }: CoursesTableProps) {
   const { deleteCourseAsync, isDeletingCourse } = useDeleteCourse()
   const [courseToDelete, setCourseToDelete] = React.useState<Course | null>(null)
 

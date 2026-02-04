@@ -46,10 +46,15 @@ type SubjectData = {
   name: string
   code: string | null
   description: string | null
-  year?: {
+  level?: {
     id: string
     name: string
-    level: number
+    order: number
+    studyPlan?: {
+      id: string
+      name: string
+      code: string
+    }
   }
 }
 
@@ -99,23 +104,47 @@ export function SubjectTable({ onEdit, onCreate }: SubjectTableProps) {
       },
     },
     {
-      accessorKey: "year.name",
+      accessorKey: "level.studyPlan.name",
       header: ({ column }) => {
         return (
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Año Escolar
+            Plan
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         )
       },
       cell: ({ row }) => {
-        const year = row.original.year
-        return year ? (
+        const level = row.original.level
+        return level?.studyPlan ? (
           <Badge variant="default">
-            {year.name}
+            {level.studyPlan.name}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )
+      },
+    },
+    {
+      accessorKey: "level.name",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Nivel
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const level = row.original.level
+        return level ? (
+          <Badge variant="secondary">
+            {level.name}
           </Badge>
         ) : (
           <span className="text-muted-foreground">—</span>

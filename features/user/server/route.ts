@@ -54,18 +54,18 @@ const app = new Hono()
   })
   .get("/teachers", async (c) => {
     const prisma = c.get("prisma");
-    const { yearId } = c.req.query();
+    const { levelId } = c.req.query();
 
     try {
       const dbTeachers = await prisma.user.findMany({
         where: {
           role: "TEACHER",
-          ...(yearId && {
+          ...(levelId && {
             courseSubjects: {
               some: {
                 course: {
-                  year: {
-                    id: yearId
+                  level: {
+                    id: levelId
                   }
                 }
               }
@@ -81,7 +81,7 @@ const app = new Hono()
           courseSubjects: {
             include: {
               course: {
-                include: { year: true },
+                include: { level: true },
               },
               subject: true,
             },
@@ -117,15 +117,15 @@ const app = new Hono()
   })
   .get("/students", async (c) => {
     const prisma = c.get("prisma");
-    const { yearId } = c.req.query();
+    const { levelId } = c.req.query();
 
     const where = { role: "STUDENT" as const };
-    if (yearId) {
+    if (levelId) {
       Object.assign(where, {
         enrollments: {
           some: {
             course: {
-              yearId
+              levelId
             }
           }
         }
@@ -147,7 +147,7 @@ const app = new Hono()
                 select: {
                   id: true,
                   name: true,
-                  yearId: true,
+                  levelId: true,
                 }
               },
             },
@@ -157,9 +157,9 @@ const app = new Hono()
       });
 
       const students = dbStudents.map((student) => {
-        // Si se solicitó un yearId, preferimos la matrícula que pertenezca a ese año.
-        const chosenEnrollment = yearId
-          ? student.enrollments.find((e) => e.course.yearId === yearId) || student.enrollments[0]
+        // Si se solicitó un levelId, preferimos la matrícula que pertenezca a ese nivel.
+        const chosenEnrollment = levelId
+          ? student.enrollments.find((e) => e.course.levelId === levelId) || student.enrollments[0]
           : student.enrollments[0];
 
         return {
@@ -170,7 +170,7 @@ const app = new Hono()
           studentProfile: student.studentProfile,
           courseId: chosenEnrollment?.course.id ?? null,
           courseName: chosenEnrollment?.course.name ?? null,
-          yearId: chosenEnrollment?.course.yearId ?? null,
+          levelId: chosenEnrollment?.course.levelId ?? null,
           enrollmentStatus: chosenEnrollment?.status ?? null,
         };
       });
@@ -201,7 +201,15 @@ const app = new Hono()
           enrollments: {
             include: {
               course: {
-                include: { year: true },
+                include: {
+                  level: {
+                    include: {
+                      studyPlan: {
+                        select: { id: true, name: true, code: true },
+                      },
+                    },
+                  },
+                },
               },
             },
           },

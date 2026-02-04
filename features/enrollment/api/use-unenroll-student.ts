@@ -14,10 +14,11 @@ type RequestType = {
   courseId: string;
 };
 type UseUnenrollStudentParams = {
-  yearId: string;
+  levelId?: string;
+  studyPlanId?: string;
 }
 
-export function useUnenrollStudent(params: UseUnenrollStudentParams) {
+export function useUnenrollStudent(params: UseUnenrollStudentParams = {}) {
   const queryClient = useQueryClient();
 
   const {
@@ -46,9 +47,15 @@ export function useUnenrollStudent(params: UseUnenrollStudentParams) {
     },
     onSuccess: (_, variables) => {
       // Invalidar queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ["students", params.yearId] });
+      if (params.levelId) {
+        queryClient.invalidateQueries({ queryKey: ["students", params.levelId] });
+      }
+      if (params.studyPlanId) {
+        queryClient.invalidateQueries({ queryKey: ["study-plan-details", params.studyPlanId] });
+      }
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", variables.courseId] });
+      queryClient.invalidateQueries({ queryKey: ["study-plans"] });
     },
   });
 

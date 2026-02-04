@@ -32,12 +32,12 @@ const menuItems = [
     showBadge: false,
   },
   {
-    title: "Años Escolares",
-    url: "/admin?section=years",
+    title: "Planes de Estudio",
+    url: "/admin?section=planes",
     icon: Calendar,
-    section: "years",
+    section: "planes",
     showBadge: true,
-    badgeKey: "yearsCount" as const,
+    badgeKey: "studyPlansCount" as const,
   },
   {
     title: "Cursos",

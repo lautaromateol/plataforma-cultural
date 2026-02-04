@@ -11,36 +11,38 @@ const app = new Hono()
     const { subjectId } = c.req.param();
 
     try {
-      // Verificar que la materia existe y el usuario tiene acceso
-      const courseSubjects = await prisma.courseSubject.findMany({
-        where: { subjectId },
+      // Verificar que la materia existe
+      const subject = await prisma.subject.findUnique({
+        where: { id: subjectId },
         include: {
-          course: {
-            include: {
-              enrollments: {
-                where: { status: "ACTIVE", studentId: user.sub },
-              },
-            },
+          level: true,
+          courseSubjects: {
+            where: { teacherId: user.sub },
           },
         },
       });
 
-      if (courseSubjects.length === 0 && user.role !== "ADMIN") {
-        const subjectExists = await prisma.subject.findUnique({
-          where: { id: subjectId },
-        });
-        if (!subjectExists) {
-          return c.json({ message: "Materia no encontrada" }, 404);
-        }
+      if (!subject) {
+        return c.json({ message: "Materia no encontrada" }, 404);
       }
 
       let hasAccess = false;
       if (user.role === "ADMIN") {
         hasAccess = true;
       } else if (user.role === "TEACHER") {
-        hasAccess = courseSubjects.some((cs) => cs.teacherId === user.sub);
+        hasAccess = subject.courseSubjects.length > 0;
       } else if (user.role === "STUDENT") {
-        hasAccess = courseSubjects.some((cs) => cs.course.enrollments.length > 0);
+        // Verificar si el estudiante está inscrito en un curso del mismo nivel que la materia
+        const enrollment = await prisma.enrollment.findFirst({
+          where: {
+            studentId: user.sub,
+            status: "ACTIVE",
+            course: {
+              levelId: subject.level.id,
+            },
+          },
+        });
+        hasAccess = !!enrollment;
       }
 
       if (!hasAccess) {

@@ -46,10 +46,10 @@ import type { Enrollment } from "@/features/enrollment/api/use-get-enrollments";
 interface StudentsTableProps {
   data: Enrollment[];
   courseId: string;
-  yearId: string;
+  levelId: string;
 }
 
-export function StudentsTable({ data, courseId, yearId }: StudentsTableProps) {
+export function StudentsTable({ data, courseId, levelId }: StudentsTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -57,7 +57,7 @@ export function StudentsTable({ data, courseId, yearId }: StudentsTableProps) {
   const [globalFilter, setGlobalFilter] = React.useState("");
 
   const { unenrollStudentAsync, isUnenrolling } = useUnenrollStudent({
-    yearId,
+    levelId,
   });
 
   const handleUnenroll = async (studentId: string, studentName: string) => {

@@ -25,7 +25,7 @@ const app = new Hono()
         const courseSubjects = await prisma.courseSubject.findMany({
           include: {
             course: {
-              include: { year: true },
+              include: { level: true },
             },
             subject: true,
             teacher: {
@@ -41,7 +41,7 @@ const app = new Hono()
       // Obtener el curso y su año
       const course = await prisma.course.findUnique({
         where: { id: courseId },
-        include: { year: true },
+        include: { level: true },
       });
 
       if (!course) {
@@ -50,7 +50,7 @@ const app = new Hono()
 
       // Obtener todas las materias del año
       const allSubjects = await prisma.subject.findMany({
-        where: { yearId: course.yearId },
+        where: { levelId: course.levelId },
       });
 
       // Obtener los courseSubjects existentes para este curso
@@ -85,8 +85,8 @@ const app = new Hono()
             classroom: course.classroom,
             createdAt: course.createdAt,
             updatedAt: course.updatedAt,
-            yearId: course.yearId,
-            year: course.year,
+            levelId: course.levelId,
+            level: course.level,
           },
           subject,
           teacher: existing?.teacher || null,

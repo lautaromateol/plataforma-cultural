@@ -2,23 +2,23 @@ import { YearSection } from "./year-section";
 import { StudentsTable } from "./students-table";
 import { useGetStudents } from "@/features/user/api/use-get-students";
 import { useGetCourses } from "@/features/course/api/use-get-courses";
-import { Year } from "@/features/year/schemas";
+import { Level } from "@/features/level/schemas";
 
-export function YearStudents({ year }: { year: Year }) {
-  const { courses } = useGetCourses({ yearId: year.id });
-  const { students, isPending, error } = useGetStudents({ yearId: year.id });
+export function LevelStudents({ level }: { level: Level }) {
+  const { courses } = useGetCourses({ levelId: level.id });
+  const { students, isPending, error } = useGetStudents({ levelId: level.id });
 
   return (
     <YearSection
       title="Estudiantes"
-      yearName={year.name}
+      yearName={level.name}
       isPending={isPending}
       error={error}
     >
       <StudentsTable
         data={students ?? []}
         courses={courses ?? []}
-        yearId={year.id}
+        levelId={level.id}
       />
     </YearSection>
   );

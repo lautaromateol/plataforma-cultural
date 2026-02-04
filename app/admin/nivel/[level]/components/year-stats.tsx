@@ -1,4 +1,4 @@
-import { Year } from "@/features/year/schemas";
+import { Level } from "@/features/level/schemas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetCourses } from "@/features/course/api/use-get-courses";
 import { useGetSubjects } from "@/features/subject/api/use-get-subjects";
@@ -6,11 +6,11 @@ import { useGetStudents } from "@/features/user/api/use-get-students";
 import { useGetTeachers } from "@/features/user/api/use-get-teachers";
 import { BookOpen, GraduationCap, School, Users } from "lucide-react";
 
-export function YearStats({ year }: { year: Year }) {
-  const { students } = useGetStudents({ yearId: year.id });
-  const { courses } = useGetCourses({ yearId: year.id });
-  const { subjects } = useGetSubjects({ yearId: year.id });
-  const { teachers } = useGetTeachers({ yearId: year.id });
+export function LevelStats({ level }: { level: Level }) {
+  const { students } = useGetStudents({ levelId: level.id });
+  const { courses } = useGetCourses({ levelId: level.id });
+  const { subjects } = useGetSubjects({ levelId: level.id });
+  const { teachers } = useGetTeachers({ levelId: level.id });
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -22,7 +22,7 @@ export function YearStats({ year }: { year: Year }) {
         <CardContent>
           <div className="text-2xl font-bold">{students?.length ?? 0}</div>
           <p className="text-xs text-muted-foreground">
-            Matriculados en el año
+            Matriculados en el nivel
           </p>
         </CardContent>
       </Card>
@@ -56,7 +56,7 @@ export function YearStats({ year }: { year: Year }) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{subjects?.length ?? 0}</div>
-          <p className="text-xs text-muted-foreground">Asignaturas del año</p>
+          <p className="text-xs text-muted-foreground">Asignaturas del nivel</p>
         </CardContent>
       </Card>
     </div>

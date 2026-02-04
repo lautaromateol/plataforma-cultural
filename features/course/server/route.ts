@@ -14,20 +14,25 @@ const app = new Hono()
   })
   .get("/", async (c) => {
     const prisma = c.get("prisma");
-    const { academicYear, yearId } = c.req.query();
+    const { academicYear, levelId } = c.req.query();
 
     try {
-      const where: any = {};
+      const where: Record<string, string> = {};
 
       if (academicYear) where.academicYear = academicYear;
-      if (yearId) where.yearId = yearId;
+      if (levelId) where.levelId = levelId;
 
       const dbCourses = await prisma.course.findMany({
         where,
         include: {
-          year: {
+          level: {
             select: {
+              id: true,
               name: true,
+              order: true,
+              studyPlan: {
+                select: { id: true, name: true, code: true },
+              },
               subjects: { select: { id: true } },
             },
           },
@@ -42,10 +47,11 @@ const app = new Hono()
         id: course.id,
         name: course.name,
         academicYear: course.academicYear,
-        year: course.year,
+        level: course.level,
         classroom: course.classroom,
+        shift: course.shift,
         capacity: course.capacity,
-        subjectsCount: course.year.subjects.length,
+        subjectsCount: course.level.subjects.length,
         enrollmentCount: course._count.enrollments,
       }));
 
@@ -63,10 +69,14 @@ const app = new Hono()
       const course = await prisma.course.findUnique({
         where: { id },
         include: {
-          year: {
+          level: {
             select: {
               id: true,
-              name: true
+              name: true,
+              order: true,
+              studyPlan: {
+                select: { id: true, name: true, code: true },
+              },
             },
           },
           _count: {
@@ -109,7 +119,7 @@ const app = new Hono()
           where: {
             name: data.name,
             academicYear: data.academicYear,
-            yearId: data.yearId,
+            levelId: data.levelId,
           },
         });
 
@@ -117,7 +127,7 @@ const app = new Hono()
           return c.json(
             {
               message:
-                "Ya existe un curso con ese nombre en el mismo año académico",
+                "Ya existe un curso con ese nombre en el mismo nivel y año académico",
             },
             400
           );

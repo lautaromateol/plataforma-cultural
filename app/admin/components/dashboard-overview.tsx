@@ -37,11 +37,11 @@ export function DashboardOverview() {
 
   const cards = [
     {
-      title: "Años Escolares",
-      value: stats.yearsCount,
-      description: "Niveles educativos configurados",
+      title: "Planes de Estudio",
+      value: stats.studyPlansCount,
+      description: `${stats.levelsCount} niveles configurados`,
       icon: Calendar,
-      href: "/admin?section=years",
+      href: "/admin/planes",
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
@@ -198,9 +198,9 @@ export function DashboardOverview() {
         </CardHeader>
         <CardContent className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
           <Button asChild variant="outline" className="justify-start">
-            <Link href="/admin?section=years">
+            <Link href="/admin/planes">
               <Calendar className="mr-2 h-4 w-4" />
-              Gestionar Años
+              Gestionar Planes
             </Link>
           </Button>
           <Button asChild variant="outline" className="justify-start">

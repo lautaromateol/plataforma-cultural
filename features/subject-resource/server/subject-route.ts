@@ -19,11 +19,18 @@ const app = new Hono()
           name: true,
           code: true,
           description: true,
-          year: {
+          level: {
             select: {
               id: true,
               name: true,
-              level: true,
+              order: true,
+              studyPlan: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                },
+              },
             },
           },
         },
@@ -34,19 +41,6 @@ const app = new Hono()
       }
 
       // Verificar acceso
-      const courseSubjects = await prisma.courseSubject.findMany({
-        where: { subjectId },
-        include: {
-          course: {
-            include: {
-              enrollments: {
-                where: { status: "ACTIVE", studentId: user.sub },
-              },
-            },
-          },
-        },
-      });
-
       let hasAccess = false;
       let isTeacher = false;
 
@@ -54,16 +48,25 @@ const app = new Hono()
         hasAccess = true;
         isTeacher = true;
       } else if (user.role === "TEACHER") {
-        const isTeacherOfSubject = courseSubjects.some(
-          (cs) => cs.teacherId === user.sub
-        );
+        // Verificar si es profesor de esta materia en algún curso
+        const courseSubjects = await prisma.courseSubject.findMany({
+          where: { subjectId, teacherId: user.sub },
+        });
+        const isTeacherOfSubject = courseSubjects.length > 0;
         hasAccess = isTeacherOfSubject;
         isTeacher = isTeacherOfSubject;
       } else if (user.role === "STUDENT") {
-        const isEnrolled = courseSubjects.some(
-          (cs) => cs.course.enrollments.length > 0
-        );
-        hasAccess = isEnrolled;
+        // Verificar si el estudiante está inscrito en un curso del mismo nivel que la materia
+        const enrollment = await prisma.enrollment.findFirst({
+          where: {
+            studentId: user.sub,
+            status: "ACTIVE",
+            course: {
+              levelId: subject.level.id,
+            },
+          },
+        });
+        hasAccess = !!enrollment;
       }
 
       if (!hasAccess) {

@@ -25,7 +25,7 @@ import { useOpenSubjectDialog } from "../hooks/use-open-subject-dialog"
 type SubjectFormData = z.infer<typeof createSubjectSchema>
 
 export function SubjectForm() {
-  const { isOpen, close, yearId, subject: initialData } = useOpenSubjectDialog()
+  const { isOpen, close, levelId, subject: initialData } = useOpenSubjectDialog()
   const isEdit = !!initialData
   const { createSubjectAsync, isCreatingSubject } = useCreateSubject()
   const { updateSubjectAsync, isUpdatingSubject } = useUpdateSubject()
@@ -63,7 +63,7 @@ export function SubjectForm() {
         await updateSubjectAsync({ id: initialData.id, data })
         toast.success("Materia actualizada exitosamente")
       } else {
-        await createSubjectAsync({ data, yearId })
+        await createSubjectAsync({ data, levelId })
         toast.success("Materia creada exitosamente")
       }
       form.reset()
