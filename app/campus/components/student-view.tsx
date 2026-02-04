@@ -50,104 +50,108 @@ export function StudentView({ data }: StudentViewProps) {
   }
 
   return (
-    <div className="space-y-8">
-      <WelcomeSection name={user.name} yearName={enrollment.year.name} />
+    <div className="space-y-12">
+      <div className="space-y-6">
+        <WelcomeSection
+          name={user.name}
+          levelName={enrollment.level.name}
+          studyPlanName={enrollment.level.studyPlan.name}
+        />
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-0 bg-white/70 backdrop-blur">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Nivel
+              </CardTitle>
+              <div className="p-2 rounded-xl bg-blue-100">
+                <Calendar className="h-5 w-5 text-blue-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-900">
+                {enrollment.level.name}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {enrollment.level.studyPlan.name}
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* Info Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-0 bg-white/70 backdrop-blur">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Año Escolar
-            </CardTitle>
-            <div className="p-2 rounded-xl bg-blue-100">
-              <Calendar className="h-5 w-5 text-blue-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">
-              {enrollment.year.name}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Nivel {enrollment.year.level}
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-0 bg-white/70 backdrop-blur">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Curso
+              </CardTitle>
+              <div className="p-2 rounded-xl bg-emerald-100">
+                <GraduationCap className="h-5 w-5 text-emerald-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-900">
+                {enrollment.course.name}
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                {enrollment.course.classroom && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {enrollment.course.classroom}
+                  </span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-0 bg-white/70 backdrop-blur">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Curso
-            </CardTitle>
-            <div className="p-2 rounded-xl bg-emerald-100">
-              <GraduationCap className="h-5 w-5 text-emerald-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">
-              {enrollment.course.name}
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              {enrollment.course.classroom && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {enrollment.course.classroom}
-                </span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-0 bg-white/70 backdrop-blur">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Compañeros
-            </CardTitle>
-            <div className="p-2 rounded-xl bg-purple-100">
-              <Users className="h-5 w-5 text-purple-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">
-              {enrollment.course.studentsCount}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              de {enrollment.course.capacity} lugares
-            </p>
-            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
-              <div
-                className="bg-gradient-to-r from-purple-500 to-pink-500 h-1.5 rounded-full transition-all"
-                style={{
-                  width: `${Math.min(
-                    (enrollment.course.studentsCount / enrollment.course.capacity) *
+          <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-0 bg-white/70 backdrop-blur">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Compañeros
+              </CardTitle>
+              <div className="p-2 rounded-xl bg-purple-100">
+                <Users className="h-5 w-5 text-purple-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-900">
+                {enrollment.course.studentsCount}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                de {enrollment.course.capacity} lugares
+              </p>
+              <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+                <div
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 h-1.5 rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(
+                      (enrollment.course.studentsCount / enrollment.course.capacity) *
                       100,
-                    100
-                  )}%`,
-                }}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Subjects Section */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/25">
-            <BookOpen className="h-5 w-5 text-white" />
+            <BookOpen className="size-10 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Mis Materias</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-2xl font-bold text-slate-900">Mis Materias</h2>
+            <p className="text-muted-foreground">
               {enrollment.subjects.length} materias asignadas
             </p>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="p-4 bg-white/70 backdrop-blur grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {enrollment.subjects.map((subject, index) => (
             <SubjectCard key={subject.id} subject={subject} index={index} />
           ))}
@@ -159,10 +163,12 @@ export function StudentView({ data }: StudentViewProps) {
 
 function WelcomeSection({
   name,
-  yearName,
+  levelName,
+  studyPlanName,
 }: {
   name: string;
-  yearName?: string;
+  levelName?: string;
+  studyPlanName?: string;
 }) {
   const firstName = name.split(" ")[0];
   const hour = new Date().getHours();
@@ -174,7 +180,7 @@ function WelcomeSection({
       {/* Decorative elements */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/2" />
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl transform -translate-x-1/3 translate-y-1/2" />
-      
+
       <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -184,9 +190,11 @@ function WelcomeSection({
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
             ¡Hola, {firstName}!
           </h1>
-          {yearName && (
+          {(levelName || studyPlanName) && (
             <p className="text-blue-100 text-lg">
-              Bienvenido a tu espacio de <span className="font-semibold">{yearName}</span>
+              {studyPlanName && <span className="font-semibold">{studyPlanName}</span>}
+              {studyPlanName && levelName && " · "}
+              {levelName && <span className="font-semibold">{levelName}</span>}
             </p>
           )}
         </div>
@@ -214,12 +222,12 @@ function SubjectCard({
   index,
 }: {
   subject: StudentCampusData["enrollment"] extends infer T
-    ? T extends { subjects: infer S }
-      ? S extends Array<infer U>
-        ? U
-        : never
-      : never
-    : never;
+  ? T extends { subjects: infer S }
+  ? S extends Array<infer U>
+  ? U
+  : never
+  : never
+  : never;
   index: number;
 }) {
   const colors = [
@@ -249,7 +257,7 @@ function SubjectCard({
       <Card className="group relative overflow-hidden border-0 bg-white/70 backdrop-blur hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer">
         {/* Top color bar */}
         <div className={`h-2 bg-gradient-to-r ${colorClass}`} />
-        
+
         <CardContent className="p-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">

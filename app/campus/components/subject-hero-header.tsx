@@ -14,7 +14,7 @@ type Subject = {
   name: string;
   code: string | null;
   description: string | null;
-  year: {
+  level: {
     id: string;
     name: string;
   };
@@ -64,7 +64,7 @@ export function SubjectHeroHeader({
         <div className="absolute top-1/2 left-1/3 w-32 h-32 rounded-full bg-white blur-2xl" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-12">
         {/* Back Button */}
         <Link href="/campus">
           <Button
@@ -97,7 +97,7 @@ export function SubjectHeroHeader({
                         </Badge>
                       )}
                       <span className="text-white/80 text-sm font-medium">
-                        {subject.year.name}
+                        {subject.level.name}
                       </span>
                     </div>
                   </>

@@ -29,8 +29,8 @@ export default function SubjectPage() {
 
   if (!subjectData || subjectError) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-4">
-        <div className="text-center space-y-6 max-w-md">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center space-y-6">
           <div className="w-24 h-24 rounded-3xl bg-linear-to-br from-red-100 to-rose-200 flex items-center justify-center mx-auto shadow-lg">
             <BookOpen className="w-12 h-12 text-red-500" />
           </div>
@@ -54,17 +54,17 @@ export default function SubjectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen">
       <SubjectHeroHeader subjectId={subjectId} colors={colors} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TeachersCard subjectId={subjectId} />
           <CoursesCard subjectId={subjectId} />
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-10">
         <div className="space-y-6">
           <AnnouncementsSection subjectId={subjectId} colors={colors} />
           <ResourcesSection

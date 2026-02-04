@@ -17,15 +17,18 @@ const app = new Hono()
         role: true,
         studentProfile: true,
         teacherProfile: true,
-        // Para estudiantes: obtener matrículas con curso y año
+        // Para estudiantes: obtener matrículas con curso y nivel
         enrollments: {
           where: { status: "ACTIVE" },
           include: {
             course: {
               include: {
-                year: {
+                level: {
                   include: {
-                    // Obtener TODAS las materias del año
+                    studyPlan: {
+                      select: { id: true, name: true, code: true },
+                    },
+                    // Obtener TODAS las materias del nivel
                     subjects: {
                       orderBy: { name: "asc" },
                     },
@@ -56,12 +59,24 @@ const app = new Hono()
           include: {
             subject: {
               include: {
-                year: true,
+                level: {
+                  include: {
+                    studyPlan: {
+                      select: { id: true, name: true, code: true },
+                    },
+                  },
+                },
               },
             },
             course: {
               include: {
-                year: true,
+                level: {
+                  include: {
+                    studyPlan: {
+                      select: { id: true, name: true, code: true },
+                    },
+                  },
+                },
                 _count: {
                   select: { enrollments: true },
                 },
@@ -99,8 +114,8 @@ const app = new Hono()
         enrollment.course.courseSubjects.map((cs) => [cs.subjectId, cs])
       );
 
-      // Obtener materias del AÑO y combinar con info de CourseSubject si existe
-      const subjects = enrollment.course.year.subjects.map((subject) => {
+      // Obtener materias del NIVEL y combinar con info de CourseSubject si existe
+      const subjects = enrollment.course.level.subjects.map((subject) => {
         const courseSubject = courseSubjectMap.get(subject.id);
         return {
           id: subject.id,
@@ -132,13 +147,15 @@ const app = new Hono()
             id: enrollment.course.id,
             name: enrollment.course.name,
             classroom: enrollment.course.classroom,
+            shift: enrollment.course.shift,
             capacity: enrollment.course.capacity,
             studentsCount: enrollment.course._count.enrollments,
           },
-          year: {
-            id: enrollment.course.year.id,
-            name: enrollment.course.year.name,
-            level: enrollment.course.year.level,
+          level: {
+            id: enrollment.course.level.id,
+            name: enrollment.course.level.name,
+            order: enrollment.course.level.order,
+            studyPlan: enrollment.course.level.studyPlan,
           },
           subjects,
         },
@@ -146,23 +163,24 @@ const app = new Hono()
     }
 
     if (fullUser.role === "TEACHER") {
-      // Agrupar materias por año para mejor organización
-      const subjectsByYear = fullUser.courseSubjects.reduce(
+      // Agrupar materias por nivel para mejor organización
+      const subjectsByLevel = fullUser.courseSubjects.reduce(
         (acc, cs) => {
-          const yearId = cs.subject.year.id;
-          if (!acc[yearId]) {
-            acc[yearId] = {
-              year: {
-                id: cs.subject.year.id,
-                name: cs.subject.year.name,
-                level: cs.subject.year.level,
+          const levelId = cs.subject.level.id;
+          if (!acc[levelId]) {
+            acc[levelId] = {
+              level: {
+                id: cs.subject.level.id,
+                name: cs.subject.level.name,
+                order: cs.subject.level.order,
+                studyPlan: cs.subject.level.studyPlan,
               },
               subjects: [],
             };
           }
 
-          // Verificar si la materia ya existe para este año
-          const existingSubject = acc[yearId].subjects.find(
+          // Verificar si la materia ya existe para este nivel
+          const existingSubject = acc[levelId].subjects.find(
             (s: any) => s.id === cs.subject.id
           );
 
@@ -172,12 +190,13 @@ const app = new Hono()
               id: cs.course.id,
               name: cs.course.name,
               classroom: cs.course.classroom,
+              shift: cs.course.shift,
               schedule: cs.schedule,
               studentsCount: cs.course._count.enrollments,
             });
           } else {
             // Crear nueva entrada de materia
-            acc[yearId].subjects.push({
+            acc[levelId].subjects.push({
               id: cs.subject.id,
               name: cs.subject.name,
               code: cs.subject.code,
@@ -187,6 +206,7 @@ const app = new Hono()
                   id: cs.course.id,
                   name: cs.course.name,
                   classroom: cs.course.classroom,
+                  shift: cs.course.shift,
                   schedule: cs.schedule,
                   studentsCount: cs.course._count.enrollments,
                 },
@@ -199,9 +219,9 @@ const app = new Hono()
         {} as Record<string, any>
       );
 
-      // Convertir a array ordenado por nivel
-      const teaching = Object.values(subjectsByYear).sort(
-        (a: any, b: any) => a.year.level - b.year.level
+      // Convertir a array ordenado por orden del nivel
+      const teaching = Object.values(subjectsByLevel).sort(
+        (a: any, b: any) => a.level.order - b.level.order
       );
 
       return c.json({
@@ -240,4 +260,3 @@ const app = new Hono()
   });
 
 export default app;
-

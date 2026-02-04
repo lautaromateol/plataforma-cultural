@@ -31,32 +31,33 @@ export function TeacherView({ data }: TeacherViewProps) {
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
 
   return (
-    <div className="space-y-8">
-      <WelcomeSection name={user.name} stats={stats} />
-
-      {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatsCard
-          title="Materias Asignadas"
-          value={stats.totalSubjects}
-          description="materias en total"
-          icon={BookOpen}
-          color="blue"
-        />
-        <StatsCard
-          title="Cursos"
-          value={stats.totalCourses}
-          description="grupos diferentes"
-          icon={Layers}
-          color="emerald"
-        />
-        <StatsCard
-          title="Estudiantes"
-          value={stats.totalStudents}
-          description="alumnos en total"
-          icon={Users}
-          color="purple"
-        />
+    <div className="space-y-12">
+      <div className="space-y-6">
+        <WelcomeSection name={user.name} stats={stats} />
+        {/* Stats Overview */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <StatsCard
+            title="Materias Asignadas"
+            value={stats.totalSubjects}
+            description="materias en total"
+            icon={BookOpen}
+            color="blue"
+          />
+          <StatsCard
+            title="Cursos"
+            value={stats.totalCourses}
+            description="grupos diferentes"
+            icon={Layers}
+            color="emerald"
+          />
+          <StatsCard
+            title="Estudiantes"
+            value={stats.totalStudents}
+            description="alumnos en total"
+            icon={Users}
+            color="purple"
+          />
+        </div>
       </div>
 
       {/* Teaching by Year */}
@@ -83,22 +84,22 @@ export function TeacherView({ data }: TeacherViewProps) {
         <div className="space-y-6">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25">
-              <Target className="h-5 w-5 text-white" />
+              <Target className="size-10 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">
+              <h2 className="text-2xl font-bold text-slate-900">
                 Mis Asignaturas
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground">
                 Organizado por año escolar
               </p>
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 p-4 bg-white/70 backdrop-blur">
             {teaching.map((yearGroup) => (
               <YearGroupSection
-                key={yearGroup.year.id}
+                key={yearGroup.level.id}
                 yearGroup={yearGroup}
                 expandedSubject={expandedSubject}
                 setExpandedSubject={setExpandedSubject}
@@ -237,7 +238,7 @@ function YearGroupSection({
     6: "from-cyan-500 to-cyan-600",
   };
 
-  const colorClass = levelColors[yearGroup.year.level] || "from-slate-500 to-slate-600";
+  const colorClass = levelColors[yearGroup.level.order] || "from-slate-500 to-slate-600";
 
   return (
     <div className="space-y-4">
@@ -250,7 +251,7 @@ function YearGroupSection({
         </div>
         <div>
           <h3 className="text-lg font-semibold text-slate-900">
-            {yearGroup.year.name}
+            {yearGroup.level.studyPlan.name} · {yearGroup.level.name}
           </h3>
           <p className="text-sm text-muted-foreground">
             {yearGroup.subjects.length} materia

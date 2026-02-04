@@ -19,9 +19,13 @@ import {
   ChevronDown,
   BookOpen,
   ArrowUpRightFromSquare,
+  Home,
+  Award,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { CampusUser } from "@/features/user/schemas";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface CampusHeaderProps {
   user: CampusUser;
@@ -30,8 +34,22 @@ interface CampusHeaderProps {
 export function CampusHeader({ user }: CampusHeaderProps) {
 
   const router = useRouter()
+  const pathname = usePathname()
 
   const { logout, isLoggingOut } = useLogout();
+
+  const navItems = [
+    {
+      name: "Inicio",
+      href: "/campus",
+      icon: Home,
+    },
+    {
+      name: "Calificaciones",
+      href: "/campus/calificaciones",
+      icon: Award,
+    },
+  ];
 
   const getInitials = (name: string) => {
     return name
@@ -72,25 +90,54 @@ export function CampusHeader({ user }: CampusHeaderProps) {
   const RoleIcon = roleBadge.icon;
 
   return (
-    <header className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <header className="w-full border-b bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+      <div className="px-4 max-w-md md:max-w-11/12">
         <div className="flex items-center justify-between h-16">
           {/* Logo & Brand */}
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-                <GraduationCap className="w-6 h-6 text-white" />
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                  <GraduationCap className="w-6 h-6 text-white" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
               </div>
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
+              <div className="hidden sm:block">
+                <h1 className="text-xl font-bold bg-linear-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+                  Campus Virtual
+                </h1>
+                <p className="text-xs text-muted-foreground -mt-0.5">
+                  Sistema de Gestión Escolar
+                </p>
+              </div>
             </div>
-            <div className="hidden sm:block">
-              <h1 className="text-xl font-bold bg-linear-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
-                Campus Virtual
-              </h1>
-              <p className="text-xs text-muted-foreground -mt-0.5">
-                Sistema de Gestión Escolar
-              </p>
-            </div>
+
+            {/* Navigation */}
+            <nav className="hidden md:flex items-center gap-1">
+              {navItems.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "flex items-center gap-2 relative",
+                        isActive
+                          ? "bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="font-medium">{item.name}</span>
+                      {isActive && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full" />
+                      )}
+                    </Button>
+                  </Link>
+                )
+              })}
+            </nav>
           </div>
 
           {/* Notifications & User Menu */}

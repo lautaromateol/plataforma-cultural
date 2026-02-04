@@ -59,7 +59,7 @@ export default function CampusLayout({
 
       <div className="relative">
         <CampusHeader user={data.user} />
-        <main className="container mx-auto px-4 py-8 max-w-7xl">{children}</main>
+        <main className="max-w-md md:max-w-11/12 mx-auto px-4 py-8">{children}</main>
       </div>
     </div>
   );
