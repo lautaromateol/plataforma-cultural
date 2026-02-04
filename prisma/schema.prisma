@@ -36,20 +36,42 @@ model User {
   @@map("users")
 }
 
-// Año escolar (1ro, 2do, 3ro, etc.)
-model Year {
+// Plan de estudio (ej: "Plan Jóvenes 4 años", "Plan Adultos 3 años")
+model StudyPlan {
+  id             String   @id @default(cuid())
+  name           String   @unique // "Plan Jóvenes 4 años"
+  code           String   @unique // "PJ4", "PA3"
+  description    String?
+  durationYears  Int // Duración en años
+  targetAudience String? // "Jóvenes 14-17 años", "Adultos"
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relaciones
+  levels Level[]
+
+  @@map("study_plans")
+}
+
+// Nivel dentro de un plan de estudio (reemplaza a Year)
+model Level {
   id          String   @id @default(cuid())
-  level       Int      @unique // 1, 2, 3, 4, 5, 6
-  name        String   @unique // "Primer Año", "Segundo Año", etc.
+  order       Int // 1, 2, 3, 4 (orden dentro del plan)
+  name        String // "Primer Nivel", "Segundo Nivel", etc.
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relaciones
-  subjects Subject[]
-  courses  Course[]
+  studyPlanId String
+  studyPlan   StudyPlan @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
+  subjects    Subject[]
+  courses     Course[]
 
-  @@map("years")
+  @@unique([studyPlanId, order])
+  @@unique([studyPlanId, name])
+  @@map("levels")
 }
 
 // Materia (Matemática, Lengua, etc.)
@@ -62,14 +84,14 @@ model Subject {
   updatedAt   DateTime @updatedAt
 
   // Relaciones
-  yearId         String
-  year           Year              @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  levelId        String
+  level          Level             @relation(fields: [levelId], references: [id], onDelete: Cascade)
   courseSubjects CourseSubject[]
   resources      SubjectResource[]
   quizzes        Quiz[]
   announcements  Announcement[]
 
-  @@unique([yearId, name])
+  @@unique([levelId, name])
   @@map("subjects")
 }
 
@@ -80,16 +102,17 @@ model Course {
   academicYear String // "2024" - año lectivo
   capacity     Int      @default(30)
   classroom    String? // "Aula 101"
+  shift        String? // Turno: "Mañana", "Tarde", "Noche"
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // Relaciones
-  yearId         String
-  year           Year            @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  levelId        String
+  level          Level           @relation(fields: [levelId], references: [id], onDelete: Cascade)
   courseSubjects CourseSubject[]
   enrollments    Enrollment[]
 
-  @@unique([name, academicYear])
+  @@unique([levelId, name, academicYear])
   @@map("courses")
 }
 
