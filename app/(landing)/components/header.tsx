@@ -12,9 +12,9 @@ export function Header() {
             <nav>
                 <ul className="flex items-center text-sm gap-6">
                     <li><a href="#inicio" className="hover:text-indigo-500">Inicio</a></li>
-                    <li><a href="#planes" className="hover:text-indigo-500">Planes</a></li>
-                    <li><a href="#programas" className="hover:text-indigo-500">Programa</a></li>
-                    <li><a href="#contacto" className="hover:text-indigo-500">Contacto</a></li>
+                    <li><a href="#modalidades" className="hover:text-indigo-500">Modalidades</a></li>
+                    <li><a href="#preguntas" className="hover:text-indigo-500">Preguntas</a></li>
+                    <li><a href="#ubicacion" className="hover:text-indigo-500">Ubicación</a></li>
                 </ul>
             </nav>
             <nav className="flex items-center justify-center gap-x-6">

@@ -1,15 +1,15 @@
-import { Contact } from "./components/contact"
 import { Hero } from "./components/hero"
-import { Programs } from "./components/programs"
-import { Plans } from "./components/testimonials"
+import { Modalities } from "./components/testimonials"
+import { FAQ } from "./components/faq"
+import { Location } from "./components/location"
 
 export default function Home() {
    return (
       <>
          <Hero />
-         <Plans />
-         <Programs />
-         <Contact />
+         <Modalities />
+         <FAQ />
+         <Location />
       </>
    )
 }
