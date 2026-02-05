@@ -1,7 +1,7 @@
 "use client"
 import { cn } from "@/lib/utils";
 import { Users, Laptop, Calendar, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { EnrollmentButton } from "@/features/enrollment";
 
 export function Modalities() {
     return (
@@ -189,7 +189,7 @@ function ModalityCard({ icon, title, subtitle, description, features, highlight 
                 </ul>
 
                 {/* CTA */}
-                <Button
+                <EnrollmentButton
                     className={cn(
                         "w-full mt-4",
                         highlight
@@ -197,8 +197,8 @@ function ModalityCard({ icon, title, subtitle, description, features, highlight 
                             : "bg-indigo-600 text-white hover:bg-indigo-700"
                     )}
                 >
-                    Más información
-                </Button>
+                    Inscribirme
+                </EnrollmentButton>
             </div>
         </div>
     )

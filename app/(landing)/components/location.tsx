@@ -1,5 +1,6 @@
 "use client"
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { EnrollmentButton } from "@/features/enrollment";
 
 export function Location() {
     return (
@@ -61,14 +62,14 @@ export function Location() {
                         {/* Call to action */}
                         <div className="bg-indigo-50 rounded-xl p-6 border-l-4 border-indigo-600">
                             <h4 className="font-bold text-gray-900 mb-2">
-                                Agendá tu visita
+                                Comenzá tu inscripción
                             </h4>
                             <p className="text-gray-600 text-sm mb-4">
-                                Preferís venir en persona? Coordiná una visita guiada y conocé nuestras instalaciones.
+                                Completá el proceso de inscripción online o visitanos en nuestra sede para más información.
                             </p>
-                            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
-                                Agendar visita
-                            </button>
+                            <EnrollmentButton className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
+                                Inscribirme
+                            </EnrollmentButton>
                         </div>
                     </div>
 
@@ -103,12 +104,15 @@ export function Location() {
                         No dejes pasar más tiempo. Terminá tu secundaria y abrí las puertas a nuevas oportunidades laborales y académicas.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button className="px-8 py-4 bg-white text-indigo-600 rounded-lg hover:bg-gray-100 transition-colors font-bold text-lg">
+                        <EnrollmentButton className="px-8 py-4 bg-white text-indigo-600 rounded-lg hover:bg-gray-100 transition-colors font-bold text-lg">
                             Inscribite ahora
-                        </button>
-                        <button className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg hover:bg-white/10 transition-colors font-bold text-lg">
+                        </EnrollmentButton>
+                        <EnrollmentButton
+                            variant="outline"
+                            className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg hover:bg-white/10 transition-colors font-bold text-lg"
+                        >
                             Solicitar información
-                        </button>
+                        </EnrollmentButton>
                     </div>
                 </div>
             </div>

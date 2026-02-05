@@ -1,5 +1,8 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { ArrowRight, GraduationCap, Clock, Home } from "lucide-react";
+import { EnrollmentButton } from "@/features/enrollment";
 
 export function Hero() {
     return (
@@ -59,12 +62,12 @@ export function Hero() {
 
                         {/* Botones de acción */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                            <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                            <EnrollmentButton size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white">
                                 Inscribite ahora
                                 <ArrowRight className="ml-2 w-4 h-4" />
-                            </Button>
-                            <Button size="lg" variant="outline" className="border-indigo-600 text-indigo-600 hover:bg-indigo-50">
-                                Ver modalidades
+                            </EnrollmentButton>
+                            <Button size="lg" variant="outline" className="border-indigo-600 text-indigo-600 hover:bg-indigo-50" asChild>
+                                <a href="#modalidades">Ver modalidades</a>
                             </Button>
                         </div>
                     </div>

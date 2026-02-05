@@ -1,6 +1,9 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { GraduationCap } from "lucide-react";
 import Link from "next/link";
+import { EnrollmentButton } from "@/features/enrollment";
 
 export function Header() {
     return (
@@ -23,11 +26,9 @@ export function Header() {
                         Iniciar Sesión
                     </Link>
                 </Button>
-                <Button asChild>
-                    <Link href="/register" className="rounded-full bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700">
-                        Matriculate
-                    </Link>
-                </Button>
+                <EnrollmentButton className="rounded-full bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700">
+                    Matriculate
+                </EnrollmentButton>
             </nav>
         </header>
     );
