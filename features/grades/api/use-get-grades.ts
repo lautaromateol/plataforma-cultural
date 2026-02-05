@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { client } from "@/lib/client"
 import { useGetUser } from "@/features/auth/api/use-get-user"
 
-const getEndpoint = () => (client.api as any).grades["$get"]
+const getEndpoint = () => (client.api).grades["$get"]
 
 type GetGradesEndpoint = ReturnType<typeof getEndpoint>
 type GetGradesResponse = Awaited<ReturnType<GetGradesEndpoint>>
@@ -13,6 +13,9 @@ type SuccessResponse = Extract<
   { quizAttempts: unknown; assignmentSubmissions: unknown }
 >
 type ErrorResponse = Extract<GetGradesJson, { message: string }>
+
+export type QuizAttemptGrade = SuccessResponse["quizAttempts"][number]
+export type AssignmentSubmissionGrade = SuccessResponse["assignmentSubmissions"][number]
 
 type GetGradesParams = {
   levelId?: string

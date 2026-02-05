@@ -136,26 +136,23 @@ export function AnnouncementsSection({
                                             <h4 className="font-semibold text-slate-900 mb-1 group-hover:text-slate-800">
                                                 {announcement.title}
                                             </h4>
-                                            <p className={`text-sm text-slate-600 mb-3 ${
-                                                expandedAnnouncements.has(announcement.id) 
-                                                    ? "" 
+                                            <p className={`text-sm text-slate-600 mb-3 ${expandedAnnouncements.has(announcement.id)
+                                                    ? ""
                                                     : "line-clamp-2"
-                                            }`}>
+                                                }`}>
                                                 {announcement.message}
                                             </p>
                                             {isMessageTruncated(announcement.message) && (
                                                 <button
                                                     onClick={() => toggleExpanded(announcement.id)}
-                                                    className={`text-xs font-medium mb-3 flex items-center gap-1 transition-colors ${
-                                                        expandedAnnouncements.has(announcement.id)
+                                                    className={`text-xs font-medium mb-3 flex items-center gap-1 transition-colors ${expandedAnnouncements.has(announcement.id)
                                                             ? "text-slate-900 hover:text-slate-700"
                                                             : `${colors.text} hover:opacity-80`
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {expandedAnnouncements.has(announcement.id) ? "Leer menos" : "Leer más"}
-                                                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${
-                                                        expandedAnnouncements.has(announcement.id) ? "rotate-180" : ""
-                                                    }`} />
+                                                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expandedAnnouncements.has(announcement.id) ? "rotate-180" : ""
+                                                        }`} />
                                                 </button>
                                             )}
                                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useGetGrades } from "@/features/grades/api/use-get-grades"
+import { AssignmentSubmissionGrade, QuizAttemptGrade, useGetGrades } from "@/features/grades/api/use-get-grades"
 import { useGetLevels } from "@/features/level/api/use-get-levels"
 import { useGetCourses } from "@/features/course/api/use-get-courses"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,7 +14,6 @@ import { EditAssignmentGradeDialog } from "@/features/grades/components/edit-ass
 import { EditQuizAnswerDialog } from "@/features/grades/components/edit-quiz-answer-dialog"
 import { QuizGradesTable } from "./quiz-grades-table"
 import { AssignmentGradesTable } from "./assignment-grades-table"
-import type { QuizAttemptGrade, AssignmentSubmissionGrade } from "@/features/grades/types"
 import {
   Tabs,
   TabsContent,
@@ -56,8 +55,10 @@ export function TeacherGradesView() {
     )
   }
 
-  const quizzes = (quizAttempts || []) as QuizAttemptGrade[]
-  const assignments = (assignmentSubmissions || []) as AssignmentSubmissionGrade[]
+  // Los tipos de la API son compatibles con los tipos de UI para teacher/admin
+  // ya que incluyen el campo `student` en la respuesta
+  const quizzes = (quizAttempts || []) 
+  const assignments = (assignmentSubmissions || [])
 
   // Calcular estadísticas
   const totalStudents = new Set([

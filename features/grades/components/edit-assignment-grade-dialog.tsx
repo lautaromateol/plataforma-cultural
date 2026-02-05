@@ -33,7 +33,7 @@ type EditAssignmentGradeDialogProps = {
     feedback: string | null
     student: {
       name: string
-      email: string
+      email: string | null
     }
     assignment: {
       title: string

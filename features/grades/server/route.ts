@@ -68,6 +68,7 @@ const app = new Hono()
               question: true,
             },
           },
+          student: true
         },
         orderBy: {
           submittedAt: "desc",
@@ -127,6 +128,7 @@ const app = new Hono()
               },
             },
           },
+          student: true
         },
         orderBy: {
           submittedAt: "desc",
@@ -181,6 +183,12 @@ const app = new Hono()
                     },
                     include: {
                       course: true,
+                      teacher: {
+                        select: {
+                          id: true,
+                          name: true,
+                        },
+                      },
                     },
                   },
                   level: {
@@ -254,6 +262,12 @@ const app = new Hono()
                         },
                       },
                       course: true,
+                      teacher: {
+                        select: {
+                          id: true,
+                          name: true,
+                        },
+                      },
                     },
                   },
                 },

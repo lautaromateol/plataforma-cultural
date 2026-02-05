@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowUpDown, Search, Pencil, Calendar } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import type { QuizAttemptGrade } from "@/features/grades/types"
+import { QuizAttemptGrade } from "@/features/grades/api/use-get-grades"
 
 interface QuizGradesTableProps {
   data: QuizAttemptGrade[]
