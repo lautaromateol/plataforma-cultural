@@ -8,10 +8,11 @@ import { SubjectHeroHeader } from "@/app/campus/components/subject-hero-header";
 import { TeachersCard } from "@/app/campus/components/teachers-card";
 import { CoursesCard } from "@/app/campus/components/courses-card";
 import { ResourcesSection } from "@/app/campus/components/resources-section";
-import { ContentSections } from "@/app/campus/components/content-sections";
 import { SubjectLoadingSkeleton } from "@/app/campus/components/subject-loading-skeleton";
 import { getColorBySubjectId } from "@/lib/color-palettes";
 import { AnnouncementsSection } from "@/features/announcement/components/announcements-section";
+import { AssignmentsSection } from "@/features/assignment/components/assignments-section";
+import { QuizzesSection } from "@/features/quiz/components/quizzes-section";
 
 export default function SubjectPage() {
   const params = useParams();
@@ -67,15 +68,9 @@ export default function SubjectPage() {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-10">
         <div className="space-y-6">
           <AnnouncementsSection subjectId={subjectId} colors={colors} />
-          <ResourcesSection
-            subjectId={subjectId}
-            colors={colors}
-          />
-
-          <ContentSections
-            subjectId={subjectId}
-            colors={colors}
-          />
+          <ResourcesSection subjectId={subjectId} colors={colors} />
+          <AssignmentsSection subjectId={subjectId} colors={colors} />
+          <QuizzesSection subjectId={subjectId} colors={colors} />
         </div>
       </div>
     </div>

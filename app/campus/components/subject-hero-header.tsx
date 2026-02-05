@@ -9,31 +9,6 @@ import { useGetSubjectTeachers } from "@/features/subject-resource/api/use-get-s
 import { useGetSubjectCourses } from "@/features/subject-resource/api/use-get-subject-courses";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type Subject = {
-  id: string;
-  name: string;
-  code: string | null;
-  description: string | null;
-  level: {
-    id: string;
-    name: string;
-  };
-};
-
-type Course = {
-  id: string;
-  courseSubjectId?: string;
-  name: string;
-  classroom: string | null;
-  schedule: string | null;
-  studentsCount: number;
-  teacher: {
-    id: string;
-    name: string;
-    email: string | null;
-  } | null;
-};
-
 interface SubjectHeroHeaderProps {
   subjectId: string;
   colors: {
