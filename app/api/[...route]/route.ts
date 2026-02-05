@@ -8,6 +8,7 @@ import subject from "@/features/subject/server/route";
 import course from "@/features/course/server/route";
 import courseSubject from "@/features/course-subject/server/route";
 import enrollment from "@/features/enrollment/server/route";
+import publicEnrollment from "@/features/enrollment/server/public-route";
 import user from "@/features/user/server/route";
 import campus from "@/features/campus/server/route";
 import subjectResource from "@/features/subject-resource/server/route";
@@ -23,6 +24,7 @@ import "./types.ts";
 const app = new Hono().basePath("/api")
   .use("*", withPrisma)
   .route("/auth", auth)
+  .route("/enrollment", publicEnrollment)
   .route("/campus", campus)
   .route("/subject-resource", subjectResource)
   .route("/subject-info", subjectInfo)

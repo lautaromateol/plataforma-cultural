@@ -164,6 +164,9 @@ model StudentProfile {
   phone         String?
   guardianName  String?
   guardianPhone String?
+  guardianDni   String?
+  guardianEmail String?
+  enrollmentPaid Boolean  @default(false) // Si pagó la matrícula
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -171,7 +174,39 @@ model StudentProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Pagos asociados
+  payments Payment[]
+
   @@map("student_profiles")
+}
+
+// Registro de pagos
+model Payment {
+  id                   String        @id @default(cuid())
+  amount               Float         // Monto en pesos argentinos
+  currency             String        @default("ARS")
+  status               PaymentStatus @default(PENDING)
+  paymentMethod        String?       // Método de pago usado
+  mercadoPagoId        String?       @unique // ID de la transacción en Mercado Pago
+  mercadoPagoStatus    String?       // Estado devuelto por MP
+  mercadoPagoDetail    String?       // Detalle adicional de MP
+  description          String?       // Descripción del pago
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  // Relaciones
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  REFUNDED
 }
 
 model TeacherProfile {

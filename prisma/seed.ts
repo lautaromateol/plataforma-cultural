@@ -45,6 +45,19 @@ async function main() {
   // PLANES DE ESTUDIO
   // ========================================
 
+  // Plan completo 6 años (requiere ir a sede)
+  const planCompleto = await prisma.studyPlan.create({
+    data: {
+      name: "Plan Completo 6 años",
+      code: "PC6",
+      description:
+        "Programa completo de educación secundaria con modalidad presencial para jóvenes desde los 12 años",
+      durationYears: 6,
+      targetAudience: "Jóvenes desde 12 años",
+      isActive: true,
+    },
+  });
+
   const planJovenes = await prisma.studyPlan.create({
     data: {
       name: "Plan Jóvenes 4 años",
@@ -64,7 +77,7 @@ async function main() {
       description:
         "Plan de estudio acelerado para adultos con una duración de 3 años",
       durationYears: 3,
-      targetAudience: "Adultos mayores de 18 años",
+      targetAudience: "Mayores de 18 años",
       isActive: true,
     },
   });
@@ -517,7 +530,7 @@ async function main() {
   console.log("🎉 Seed completado exitosamente!");
   console.log("");
   console.log("📊 Resumen:");
-  console.log(`   - Planes de estudio: 2`);
+  console.log(`   - Planes de estudio: 3 (incluyendo Plan Completo 6 años)`);
   console.log(`   - Niveles: ${nivelesJovenes.length + nivelesAdultos.length}`);
   console.log(
     `   - Materias: ${materiasJovenesN1.length + materiasJovenesN2.length + materiasAdultosN1.length + materiasAdultosN2.length}`
